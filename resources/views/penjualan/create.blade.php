@@ -3,7 +3,7 @@
 @section('page_title', 'Form Penjualan Baru')
 
 @section('content')
-<div class="max-w-4xl" x-data="{ 
+<div class="max-w-6xl mx-auto" x-data="{ 
     jumlah: {{ old('jumlah_tabung', 0) }}, 
     harga: 0,
     metode: '{{ old('metode_pembayaran', 'cash') }}',
@@ -132,7 +132,7 @@
 
             {{-- Right Column: Summary Card --}}
             <div class="lg:col-span-1">
-                <div class="bg-gray-900 rounded-3xl shadow-xl p-6 sticky top-6 text-white border border-gray-800">
+                <div class="bg-gray-900 rounded-3xl shadow-xl p-6 lg:sticky lg:top-6 text-white border border-gray-800">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Ringkasan Penjualan</h3>
                     
                     <div class="space-y-4 mb-8">
@@ -163,6 +163,8 @@
         </div>
     </form>
 </div>
+@endsection
+
 @section('extra_js')
 <script>
     function updatePangkalanId(val) {

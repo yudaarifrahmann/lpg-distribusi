@@ -45,4 +45,5 @@ class StoreDriverRequest extends FormRequest
             'status.required' => 'Status wajib dipilih',
         ];
     }
+
 }

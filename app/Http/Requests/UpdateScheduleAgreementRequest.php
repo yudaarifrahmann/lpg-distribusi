@@ -24,6 +24,7 @@ class UpdateScheduleAgreementRequest extends FormRequest
         return [
             'tanggal_sa' => 'required|date',
             'jumlah_do' => 'required|integer|min:1',
+            'jumlah_tabung' => 'required|integer|min:1',
             'keterangan' => 'nullable|string',
             'status_sa' => 'required|in:pending,selesai',
         ];

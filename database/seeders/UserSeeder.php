@@ -14,30 +14,36 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Create Superadmin
-        $superadmin = User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@lpg.local',
-            'password' => Hash::make('superadmin123'),
-            'email_verified_at' => now(),
-        ]);
+        $superadmin = User::updateOrCreate(
+            ['email' => 'superadmin@lpg.local'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('superadmin123'),
+                'email_verified_at' => now(),
+            ]
+        );
         $superadmin->assignRole('superadmin');
 
         // Create Admin Keuangan
-        $adminKeuangan = User::create([
-            'name' => 'Admin Keuangan',
-            'email' => 'admin_keuangan@lpg.local',
-            'password' => Hash::make('keuangan123'),
-            'email_verified_at' => now(),
-        ]);
+        $adminKeuangan = User::updateOrCreate(
+            ['email' => 'admin_keuangan@lpg.local'],
+            [
+                'name' => 'Admin Keuangan',
+                'password' => Hash::make('keuangan123'),
+                'email_verified_at' => now(),
+            ]
+        );
         $adminKeuangan->assignRole('admin_keuangan');
 
         // Create Supir/Knek
-        $supirKnek = User::create([
-            'name' => 'Supir Knek',
-            'email' => 'supir_knek@lpg.local',
-            'password' => Hash::make('supirknek123'),
-            'email_verified_at' => now(),
-        ]);
+        $supirKnek = User::updateOrCreate(
+            ['email' => 'supir_knek@lpg.local'],
+            [
+                'name' => 'Supir Knek',
+                'password' => Hash::make('supirknek123'),
+                'email_verified_at' => now(),
+            ]
+        );
         $supirKnek->assignRole('supir_knek');
     }
 }

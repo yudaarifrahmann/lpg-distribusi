@@ -23,14 +23,17 @@
                 @error('tanggal_sa')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
-            <div x-data="{ doCount: 1 }">
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah DO <span class="text-red-500">*</span></label>
-                <input type="number" name="jumlah_do" x-model="doCount" value="{{ old('jumlah_do', 1) }}" min="1" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
-                <p class="text-xs text-gray-500 mt-1.5 flex items-center">
-                    <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                    Total tabung otomatis: <span class="font-bold text-gray-700 ml-1" x-text="doCount * 560"></span> tabung
-                </p>
+                <input type="number" name="jumlah_do" value="{{ old('jumlah_do', 1) }}" min="1" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
                 @error('jumlah_do')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Tabung <span class="text-red-500">*</span></label>
+                <input type="number" name="jumlah_tabung" value="{{ old('jumlah_tabung') }}" min="1" required placeholder="Masukkan jumlah tabung"
+                       class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
+                @error('jumlah_tabung')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
             <div>

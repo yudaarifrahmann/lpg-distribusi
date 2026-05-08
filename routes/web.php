@@ -21,6 +21,9 @@ use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockHistoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\BackupController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 // Landing Page
@@ -74,11 +77,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/retur/{retur}/approve', [ReturTabungController::class, 'approve'])->name('retur.approve')->middleware('can:edit stock');
 
     // Stock Adjustment & History
-    Route::resource('stock-adjustment', StockAdjustmentController::class)->middleware('role:superadmin');
+    Route::resource('stock-adjustment', StockAdjustmentController::class);
     Route::get('/stock-history', [StockHistoryController::class, 'index'])->name('stock-history.index')->middleware('can:view stock');
     
     // Audit Log
-    Route::resource('audit-log', AuditLogController::class)->only(['index', 'show'])->middleware('role:superadmin');
+    Route::resource('audit-log', AuditLogController::class)->only(['index', 'show']);
+
+    // User Management
+    Route::resource('user-management', UserManagementController::class)
+        ->except(['show'])
+        ->parameters(['user-management' => 'user'])
+        ->middleware('can:view user management');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -86,12 +95,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
     // Backup & Settings
-    Route::middleware('role:superadmin')->group(function () {
-        Route::get('/settings/backup', [BackupController::class, 'index'])->name('backup.index');
-        Route::post('/settings/backup', [BackupController::class, 'create'])->name('backup.create');
-        Route::get('/settings/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
-        Route::delete('/settings/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
-    });
+    Route::get('/settings/backup', [BackupController::class, 'index'])->name('backup.index');
+    Route::post('/settings/backup', [BackupController::class, 'create'])->name('backup.create');
+    Route::get('/settings/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
+    Route::delete('/settings/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
 
     // Laporan
     Route::middleware('can:view laporan')->prefix('laporan')->group(function () {

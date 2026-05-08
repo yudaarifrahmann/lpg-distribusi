@@ -45,4 +45,5 @@ class UpdateDriverRequest extends FormRequest
             'status.required' => 'Status wajib dipilih',
         ];
     }
+
 }

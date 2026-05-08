@@ -47,7 +47,6 @@ class ScheduleAgreementController extends Controller
     public function store(StoreScheduleAgreementRequest $request)
     {
         $data = $request->validated();
-        $data['jumlah_tabung'] = $data['jumlah_do'] * 560;
         $data['status_sa'] = 'pending';
 
         ScheduleAgreement::create($data);
@@ -79,7 +78,6 @@ class ScheduleAgreementController extends Controller
     public function update(UpdateScheduleAgreementRequest $request, ScheduleAgreement $scheduleAgreement)
     {
         $data = $request->validated();
-        $data['jumlah_tabung'] = $data['jumlah_do'] * 560;
 
         $scheduleAgreement->update($data);
 

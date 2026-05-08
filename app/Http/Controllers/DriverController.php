@@ -49,9 +49,10 @@ class DriverController extends Controller
      */
     public function create()
     {
-        // Get users with supir_knek role that are not already assigned to a driver
+        // Get users with supir_knek role that are not already assigned to a driver.
         $assignedUserIds = Driver::withTrashed()->pluck('user_id')->toArray();
         $users = User::role('supir_knek')
+                     ->with('roles')
                      ->whereNotIn('id', $assignedUserIds)
                      ->get();
 
@@ -88,6 +89,7 @@ class DriverController extends Controller
                                 ->pluck('user_id')
                                 ->toArray();
         $users = User::role('supir_knek')
+                     ->with('roles')
                      ->whereNotIn('id', $assignedUserIds)
                      ->get();
 

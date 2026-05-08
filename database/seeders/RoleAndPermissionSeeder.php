@@ -102,14 +102,31 @@ class RoleAndPermissionSeeder extends Seeder
             'view laporan',
         ]);
 
-        // Assign permissions to supir_knek
-        $supirKnek->syncPermissions([
+        $driverPermissions = [
             'view dashboard',
             'view surat jalan',
             'view vehicle stock',
             'view penjualan',
             'create penjualan', // Allow supir to input sales
             'view piutang', // Allow supir to see their own receivables
-        ]);
+        ];
+
+        $supirKnek->syncPermissions($driverPermissions);
+
+        // Merge split roles back into the original combined role.
+        foreach (['supir', 'knek'] as $splitRoleName) {
+            $splitRole = Role::where('name', $splitRoleName)->first();
+
+            if (! $splitRole) {
+                continue;
+            }
+
+            foreach ($splitRole->users as $user) {
+                $user->assignRole($supirKnek);
+                $user->removeRole($splitRole);
+            }
+
+            $splitRole->delete();
+        }
     }
 }
