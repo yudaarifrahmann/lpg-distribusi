@@ -1,0 +1,127 @@
+<?php
+
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PangkalanController;
+use App\Http\Controllers\TruckController;
+use App\Http\Controllers\DriverController;
+use App\Http\Controllers\LpgPriceController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\ScheduleAgreementController;
+use App\Http\Controllers\PenebusanController;
+use App\Http\Controllers\SuratJalanController;
+use App\Http\Controllers\VehicleStockController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\PenjualanController;
+use App\Http\Controllers\PiutangController;
+use App\Http\Controllers\PembayaranPiutangController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ReturTabungController;
+use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\StockHistoryController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AuditLogController;
+use Illuminate\Support\Facades\Route;
+
+// Landing Page
+Route::get('/', function () {
+    return view('landing');
+});
+
+// Authentication Routes
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+});
+
+// Protected Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+    // Schedule Agreement
+    Route::resource('schedule-agreement', ScheduleAgreementController::class)->middleware('can:view sa');
+
+    // Penebusan
+    Route::resource('penebusan', PenebusanController::class)->middleware('can:view penebusan');
+
+    // Surat Jalan
+    Route::resource('surat-jalan', SuratJalanController::class)->middleware('can:view surat jalan');
+    Route::get('surat-jalan/{suratJalan}/print', [SuratJalanController::class, 'print'])->name('surat-jalan.print')->middleware('can:view surat jalan');
+
+    // Vehicle Stock
+    Route::get('/vehicle-stock', [VehicleStockController::class, 'index'])->name('vehicle-stock.index')->middleware('can:view vehicle stock');
+
+    // Stock Warehouse
+    Route::get('/stock', [StockController::class, 'index'])->name('stock.index')->middleware('can:view stock');
+
+    // Penjualan
+    Route::resource('penjualan', PenjualanController::class)->middleware('can:view penjualan');
+
+    // Piutang
+    Route::resource('piutang', PiutangController::class)->only(['index', 'show'])->middleware('can:view piutang');
+    
+    // Pembayaran Piutang
+    Route::post('/pembayaran-piutang', [PembayaranPiutangController::class, 'store'])->name('pembayaran-piutang.store')->middleware('can:create piutang');
+    Route::delete('/pembayaran-piutang/{pembayaran}', [PembayaranPiutangController::class, 'destroy'])->name('pembayaran-piutang.destroy')->middleware('can:delete piutang');
+
+    // Pengeluaran
+    Route::resource('expense', ExpenseController::class)->middleware('can:view pengeluaran');
+    Route::post('/expense/{expense}/verify', [ExpenseController::class, 'verify'])->name('expense.verify')->middleware('can:edit pengeluaran');
+
+    // Retur Tabung
+    Route::resource('retur', ReturTabungController::class)->middleware('can:view stock');
+    Route::post('/retur/{retur}/approve', [ReturTabungController::class, 'approve'])->name('retur.approve')->middleware('can:edit stock');
+
+    // Stock Adjustment & History
+    Route::resource('stock-adjustment', StockAdjustmentController::class)->middleware('role:superadmin');
+    Route::get('/stock-history', [StockHistoryController::class, 'index'])->name('stock-history.index')->middleware('can:view stock');
+    
+    // Audit Log
+    Route::resource('audit-log', AuditLogController::class)->only(['index', 'show'])->middleware('role:superadmin');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+
+    // Backup & Settings
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/settings/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::post('/settings/backup', [BackupController::class, 'create'])->name('backup.create');
+        Route::get('/settings/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
+        Route::delete('/settings/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
+    });
+
+    // Laporan
+    Route::middleware('can:view laporan')->prefix('laporan')->group(function () {
+        Route::get('/penjualan', [ReportController::class, 'penjualan'])->name('report.penjualan');
+        Route::get('/penjualan/export', [ReportController::class, 'exportPenjualan'])->name('report.penjualan.export');
+        Route::get('/pengeluaran', [ReportController::class, 'pengeluaran'])->name('report.pengeluaran');
+        Route::get('/laba-rugi', [ReportController::class, 'labaRugi'])->name('report.laba-rugi');
+        Route::get('/piutang', [ReportController::class, 'piutang'])->name('report.piutang');
+        Route::get('/stok', [ReportController::class, 'stok'])->name('report.stok');
+    });
+
+    // Master Data Routes — guarded by 'view master data' permission
+    Route::middleware('can:view master data')->prefix('master-data')->group(function () {
+        // Pangkalan
+        Route::resource('pangkalan', PangkalanController::class);
+
+        // Truk
+        Route::resource('truck', TruckController::class);
+
+        // Supir/Knek
+        Route::resource('driver', DriverController::class);
+
+        // Harga LPG
+        Route::resource('lpg-price', LpgPriceController::class)->parameters([
+            'lpg-price' => 'lpgPrice',
+        ]);
+
+        // Kategori Pengeluaran
+        Route::resource('expense-category', ExpenseCategoryController::class)->parameters([
+            'expense-category' => 'expenseCategory',
+        ]);
+    });
+});

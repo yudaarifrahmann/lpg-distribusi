@@ -1,0 +1,247 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StorePenjualanRequest;
+use App\Http\Requests\UpdatePenjualanRequest;
+use App\Models\Penjualan;
+use App\Models\Piutang;
+use App\Models\SuratJalan;
+use App\Models\Pangkalan;
+use App\Models\LpgPrice;
+use App\Models\VehicleStock;
+use App\Models\VehicleStockHistory;
+use App\Traits\LogActivity;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+
+class PenjualanController extends Controller
+{
+    use LogActivity;
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'lpgPrice']);
+
+        // Role based filtering
+        if (Auth::user()->hasRole('supir_knek')) {
+            $driver = Auth::user()->driver;
+            if ($driver) {
+                $query->where('driver_id', $driver->id);
+            } else {
+                $query->where('id', 0);
+            }
+        }
+
+        if ($request->filled('search')) {
+            $query->where('nomor_invoice', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('pangkalan_id')) {
+            $query->where('pangkalan_id', $request->pangkalan_id);
+        }
+
+        if ($request->filled('metode_pembayaran')) {
+            $query->where('metode_pembayaran', $request->metode_pembayaran);
+        }
+
+        if ($request->filled('status_pembayaran')) {
+            $query->where('status_pembayaran', $request->status_pembayaran);
+        }
+
+        $penjualans = $query->latest('tanggal_penjualan')->paginate(15);
+        $pangkalans = Pangkalan::where('status', 'aktif')->get();
+
+        return view('penjualan.index', compact('penjualans', 'pangkalans'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $querySj = SuratJalan::with(['truck', 'supir'])->where('status_perjalanan', 'berangkat');
+        
+        // Supir only sees their own active SJ
+        if (Auth::user()->hasRole('supir_knek')) {
+            $driver = Auth::user()->driver;
+            if ($driver) {
+                $querySj->where(function($q) use ($driver) {
+                    $q->where('driver_id', $driver->id)->orWhere('knek_id', $driver->id);
+                });
+            } else {
+                $querySj->where('id', 0);
+            }
+        }
+
+        $suratJalans = $querySj->get();
+        $pangkalans = Pangkalan::where('status', 'aktif')->get();
+        $prices = LpgPrice::where('status', 'aktif')->get();
+
+        return view('penjualan.create', compact('suratJalans', 'pangkalans', 'prices'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StorePenjualanRequest $request)
+    {
+        $data = $request->validated();
+        
+        DB::beginTransaction();
+        try {
+            $sj = SuratJalan::findOrFail($data['surat_jalan_id']);
+            $price = LpgPrice::findOrFail($data['lpg_price_id']);
+            
+            // 1. Check Vehicle Stock
+            $vStock = VehicleStock::where('truck_id', $sj->truck_id)->first();
+            if (!$vStock || $vStock->stok_saat_ini < $data['jumlah_tabung']) {
+                throw new \Exception('Stok di kendaraan tidak mencukupi. Stok saat ini: ' . ($vStock ? $vStock->stok_saat_ini : 0));
+            }
+
+            // 2. Prepare Data
+            $total = $price->harga * $data['jumlah_tabung'];
+            $invoice = 'INV-' . Carbon::now()->format('YmdHis') . rand(10, 99);
+            
+            $penjualanData = [
+                'nomor_invoice' => $invoice,
+                'tanggal_penjualan' => $data['tanggal_penjualan'],
+                'surat_jalan_id' => $sj->id,
+                'truck_id' => $sj->truck_id,
+                'driver_id' => $sj->driver_id,
+                'pangkalan_id' => $data['pangkalan_id'],
+                'lpg_price_id' => $price->id,
+                'jumlah_tabung' => $data['jumlah_tabung'],
+                'harga_satuan' => $price->harga,
+                'total_penjualan' => $total,
+                'metode_pembayaran' => $data['metode_pembayaran'],
+                'status_pembayaran' => $data['metode_pembayaran'] == 'utang' ? 'belum_lunas' : 'lunas',
+                'catatan' => $data['catatan'],
+            ];
+
+            // 3. Create Penjualan
+            $penjualan = Penjualan::create($penjualanData);
+
+            // 4. Decrease Vehicle Stock
+            $newVStock = $vStock->stok_saat_ini - $data['jumlah_tabung'];
+            $vStock->update(['stok_saat_ini' => $newVStock]);
+
+            // 5. Create Vehicle History
+            VehicleStockHistory::create([
+                'tanggal' => $data['tanggal_penjualan'],
+                'truck_id' => $sj->truck_id,
+                'jenis_mutasi' => 'penjualan',
+                'referensi' => $invoice,
+                'stok_masuk' => 0,
+                'stok_keluar' => $data['jumlah_tabung'],
+                'stok_akhir' => $newVStock,
+                'keterangan' => 'Penjualan ke Pangkalan: ' . $penjualan->pangkalan->nama_pangkalan,
+            ]);
+
+            // 6. Create Piutang if debt
+            if ($data['metode_pembayaran'] == 'utang') {
+                Piutang::create([
+                    'penjualan_id' => $penjualan->id,
+                    'pangkalan_id' => $data['pangkalan_id'],
+                    'nominal_piutang' => $total,
+                    'sisa_tagihan' => $total,
+                    'tanggal_jatuh_tempo' => $data['tanggal_jatuh_tempo'],
+                    'status_piutang' => 'belum_bayar',
+                ]);
+            }
+
+            self::log('Input Penjualan: ' . $invoice, 'penjualan', null, $penjualanData);
+
+            DB::commit();
+            return redirect()->route('penjualan.index')->with('success', 'Transaksi Penjualan berhasil disimpan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Penjualan $penjualan)
+    {
+        $penjualan->load(['pangkalan', 'truck', 'supir', 'lpgPrice', 'suratJalan', 'piutang']);
+        return view('penjualan.show', compact('penjualan'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Penjualan $penjualan)
+    {
+        return view('penjualan.edit', compact('penjualan'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdatePenjualanRequest $request, Penjualan $penjualan)
+    {
+        $oldData = $penjualan->toArray();
+        $penjualan->update($request->validated());
+        
+        // If status becomes lunas, we should also update piutang if it exists
+        if ($penjualan->status_pembayaran == 'lunas' && $penjualan->piutang) {
+            $penjualan->piutang->update([
+                'sisa_tagihan' => 0,
+                'status_piutang' => 'lunas'
+            ]);
+        }
+
+        self::log('Update Penjualan: ' . $penjualan->nomor_invoice, 'penjualan', $oldData, $penjualan->toArray());
+
+        return redirect()->route('penjualan.index')->with('success', 'Transaksi berhasil diperbarui.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Penjualan $penjualan)
+    {
+        // For audit trail, deletion is usually restricted, but I'll implement rollback if superadmin
+        if (!Auth::user()->hasRole('superadmin')) {
+            return back()->with('error', 'Hanya SuperAdmin yang dapat menghapus transaksi penjualan.');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Rollback vehicle stock
+            $vStock = VehicleStock::where('truck_id', $penjualan->truck_id)->first();
+            $newVStock = $vStock->stok_saat_ini + $penjualan->jumlah_tabung;
+            $vStock->update(['stok_saat_ini' => $newVStock]);
+
+            VehicleStockHistory::create([
+                'tanggal' => now(),
+                'truck_id' => $penjualan->truck_id,
+                'jenis_mutasi' => 'distribusi_ke_truk',
+                'referensi' => 'BATAL-' . $penjualan->nomor_invoice,
+                'stok_masuk' => $penjualan->jumlah_tabung,
+                'stok_keluar' => 0,
+                'stok_akhir' => $newVStock,
+                'keterangan' => 'Pembatalan Transaksi ' . $penjualan->nomor_invoice,
+            ]);
+
+            $oldData = $penjualan->toArray();
+            $penjualan->delete();
+
+            self::log('Hapus Penjualan: ' . $oldData['nomor_invoice'], 'penjualan', $oldData, null);
+
+            DB::commit();
+
+            return redirect()->route('penjualan.index')->with('success', 'Transaksi berhasil dibatalkan dan stok kendaraan dikembalikan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
+        }
+    }
+}
