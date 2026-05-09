@@ -125,9 +125,10 @@
                                         'cash' => 'bg-emerald-100 text-emerald-700',
                                         'transfer' => 'bg-blue-100 text-blue-700',
                                         'utang' => 'bg-amber-100 text-amber-700',
+                                        'split' => 'bg-purple-100 text-purple-700',
                                     ];
                                 @endphp
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $met[$pj->metode_pembayaran] }}">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $met[$pj->metode_pembayaran] ?? 'bg-gray-100 text-gray-700' }}">
                                     {{ $pj->metode_pembayaran }}
                                 </span>
                             </td>

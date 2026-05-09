@@ -32,13 +32,15 @@ class ReportController extends Controller
 
         $penjualans = $query->latest('tanggal_penjualan')->get();
 
-        // Summary Stats
+        // Summary Stats - Updated to use nominal columns for split payment support
         $summary = [
             'total_tabung' => $penjualans->sum('jumlah_tabung'),
             'total_omzet' => $penjualans->sum('total_penjualan'),
-            'cash' => $penjualans->where('metode_pembayaran', 'cash')->sum('total_penjualan'),
-            'transfer' => $penjualans->where('metode_pembayaran', 'transfer')->sum('total_penjualan'),
-            'utang' => $penjualans->where('metode_pembayaran', 'utang')->sum('total_penjualan'),
+            'cash' => $penjualans->sum('nominal_cash'),
+            'transfer' => $penjualans->sum('nominal_transfer'),
+            'utang' => $penjualans->sum(function($p) {
+                return $p->total_penjualan - $p->nominal_cash - $p->nominal_transfer;
+            }),
         ];
 
         // Breakdown per Harga
@@ -91,8 +93,10 @@ class ReportController extends Controller
         $startDate = $request->start_date ?? Carbon::now()->startOfMonth()->toDateString();
         $endDate = $request->end_date ?? Carbon::now()->endOfMonth()->toDateString();
 
-        // 1. Revenue (Penjualan)
-        $totalPenjualan = Penjualan::whereBetween('tanggal_penjualan', [$startDate, $endDate])->sum('total_penjualan');
+        // 1. Revenue (Penjualan) - hanya yang sudah dibayar (lunas/cicilan)
+        $totalPenjualan = Penjualan::whereBetween('tanggal_penjualan', [$startDate, $endDate])
+            ->whereIn('status_pembayaran', ['lunas', 'cicilan'])
+            ->sum('total_penjualan');
         
         // 2. Cost of Goods Sold (Penebusan DO)
         $totalPenebusan = Penebusan::whereBetween('tanggal_penebusan', [$startDate, $endDate])->sum('total_penebusan');
@@ -200,8 +204,8 @@ class ReportController extends Controller
             $query->where('driver_id', $request->driver_id);
         }
 
-        // Supir Knek restriction
-        if (Auth::user()->hasRole('supir_knek')) {
+        // Supir Knek restriction - Superadmin and Finance sees all
+        if (Auth::user()->hasRole('supir_knek') && !Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan'])) {
             $driver = Auth::user()->driver;
             $query->where('driver_id', $driver ? $driver->id : 0);
         }

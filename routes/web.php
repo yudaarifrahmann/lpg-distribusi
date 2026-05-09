@@ -68,6 +68,7 @@ Route::middleware('auth')->group(function () {
     // Pembayaran Piutang
     Route::post('/pembayaran-piutang', [PembayaranPiutangController::class, 'store'])->name('pembayaran-piutang.store')->middleware('can:view piutang');
     Route::post('/piutang/{piutang}/pelunasan', [PembayaranPiutangController::class, 'pelunasan'])->name('piutang.pelunasan')->middleware('can:view piutang');
+    Route::post('/pembayaran-piutang/{pembayaran}/verify', [PembayaranPiutangController::class, 'verify'])->name('pembayaran-piutang.verify')->middleware('can:create piutang');
     Route::delete('/pembayaran-piutang/{pembayaran}', [PembayaranPiutangController::class, 'destroy'])->name('pembayaran-piutang.destroy')->middleware('can:delete piutang');
 
     // Pengeluaran

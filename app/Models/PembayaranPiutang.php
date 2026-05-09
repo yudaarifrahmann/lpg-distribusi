@@ -15,14 +15,18 @@ class PembayaranPiutang extends Model
         'tanggal_pembayaran',
         'nominal_pembayaran',
         'metode_pembayaran',
+        'status_verifikasi',
         'bukti_pembayaran',
         'keterangan',
         'user_id',
+        'verified_by',
+        'verified_at',
     ];
 
     protected $casts = [
         'tanggal_pembayaran' => 'date',
         'nominal_pembayaran' => 'decimal:2',
+        'verified_at' => 'datetime',
     ];
 
     public function piutang(): BelongsTo
@@ -33,5 +37,10 @@ class PembayaranPiutang extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
     }
 }

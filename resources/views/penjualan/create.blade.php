@@ -31,7 +31,54 @@
         </a>
     </div>
 
-    <form action="{{ route('penjualan.store') }}" method="POST" class="space-y-6">
+    <form action="{{ route('penjualan.store') }}" method="POST" class="space-y-6" x-data="{
+        multi: false,
+        metode: ['cash'],
+        rekeningPopup: false,
+        rekeningDetail: {
+            bank: 'BCA',
+            norek: '1234567890',
+            nama: 'PT LPG DISTRIBUSI'
+        },
+        toggleMetode(val) {
+            if (!this.multi) {
+                this.metode = [val];
+            } else {
+                if (this.metode.includes(val)) {
+                    this.metode = this.metode.filter(m => m !== val);
+                    if (val === 'cash') this.nominalCash = 0;
+                    if (val === 'transfer') this.nominalTransfer = 0;
+                } else {
+                    this.metode.push(val);
+                }
+            }
+            this.autoFillSinglePayment();
+        },
+        toggleMulti() {
+            if (!this.multi) {
+                if (this.metode.length > 1) {
+                    this.metode = [this.metode[0]];
+                } else if (this.metode.length === 0) {
+                    this.metode = ['cash'];
+                }
+            }
+            this.autoFillSinglePayment();
+        },
+        autoFillSinglePayment() {
+            if (!this.multi && this.metode.length === 1) {
+                if (this.metode[0] === 'cash') {
+                    this.nominalCash = this.total;
+                    this.nominalTransfer = 0;
+                } else if (this.metode[0] === 'transfer') {
+                    this.nominalTransfer = this.total;
+                    this.nominalCash = 0;
+                } else if (this.metode[0] === 'utang') {
+                    this.nominalCash = 0;
+                    this.nominalTransfer = 0;
+                }
+            }
+        }
+    }" x-effect="autoFillSinglePayment()">
         @csrf
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {{-- Left Column: Form Fields --}}
@@ -94,58 +141,112 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
                         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Rincian Pembayaran</h3>
-                        <p class="text-xs text-gray-400 mt-0.5">Isi nominal Cash dan/atau Transfer. Sisa otomatis jadi Piutang.</p>
+                        <div class="flex items-center gap-3 mt-2">
+                            <input type="checkbox" id="multi_pembayaran" x-model="multi" @change="toggleMulti()" class="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                            <label for="multi_pembayaran" class="text-xs font-bold text-gray-500 uppercase cursor-pointer select-none">Multi Pembayaran</label>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-0.5">Pilih satu atau lebih metode pembayaran.</p>
                     </div>
                     <div class="p-6 space-y-4">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <button type="button" 
+                                @click="toggleMetode('cash')" 
+                                :class="metode.includes('cash') ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300'"
+                                class="flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all text-center flex flex-col items-center justify-center gap-1">
+                                <svg class="w-6 h-6 mb-1" :class="metode.includes('cash') ? 'text-emerald-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                Cash (Tunai)
+                            </button>
+                            <button type="button" 
+                                @click="toggleMetode('transfer')" 
+                                :class="metode.includes('transfer') ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300'"
+                                class="flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all text-center flex flex-col items-center justify-center gap-1">
+                                <svg class="w-6 h-6 mb-1" :class="metode.includes('transfer') ? 'text-blue-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                Transfer (Bank)
+                            </button>
+                            <button type="button" 
+                                @click="toggleMetode('utang')" 
+                                :class="metode.includes('utang') ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300'"
+                                class="flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all text-center flex flex-col items-center justify-center gap-1">
+                                <svg class="w-6 h-6 mb-1" :class="metode.includes('utang') ? 'text-red-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                Utang (Piutang)
+                            </button>
+                        </div>
 
-                        {{-- Cash Input --}}
-                        <div>
+                        <!-- Single Payment Info -->
+                        <div x-show="!multi" class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center mt-4">
+                            <p class="text-sm text-blue-700">
+                                Seluruh tagihan sebesar <span class="font-bold" x-text="formatRupiah(total)"></span> akan dicatat sebagai 
+                                <span class="font-bold uppercase" x-text="metode[0]"></span>.
+                            </p>
+                        </div>
+
+                        <!-- Cash Input -->
+                        <div x-show="metode.includes('cash')" :class="!multi ? 'hidden' : 'mt-4'">
                             <label class="flex items-center mb-1">
                                 <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mr-2 flex-shrink-0">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                                 </span>
-                                <span class="text-sm font-semibold text-gray-700">Bayar Cash (Tunai)</span>
+                                <span class="text-sm font-semibold text-gray-700">Nominal Cash (Tunai)</span>
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">Rp</span>
-                                <input type="number" name="nominal_cash" x-model.number="nominalCash" min="0" step="1000" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 transition" placeholder="0" value="{{ old('nominal_cash', 0) }}">
+                                <input type="number" name="nominal_cash" x-model.number="nominalCash" 
+                                    @input="if (multi && metode.includes('transfer')) nominalTransfer = Math.max(0, total - nominalCash)"
+                                    min="0" step="any" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 transition" placeholder="0" value="{{ old('nominal_cash', 0) }}">
                             </div>
                         </div>
 
-                        {{-- Transfer Input --}}
-                        <div>
+                        <!-- Transfer Input -->
+                        <div x-show="metode.includes('transfer')" :class="!multi ? 'hidden' : 'mt-4'">
                             <label class="flex items-center mb-1">
                                 <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-2 flex-shrink-0">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
                                 </span>
-                                <span class="text-sm font-semibold text-gray-700">Bayar Transfer (Bank)</span>
+                                <span class="text-sm font-semibold text-gray-700">Nominal Transfer (Bank)</span>
                                 <span class="ml-2 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase tracking-wide">Pending Verifikasi</span>
+                                <button type="button" @click="rekeningPopup = true" class="ml-2 text-xs text-blue-600 underline">Lihat Rekening</button>
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">Rp</span>
-                                <input type="number" name="nominal_transfer" x-model.number="nominalTransfer" min="0" step="1000" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 transition" placeholder="0" value="{{ old('nominal_transfer', 0) }}">
+                                <input type="number" name="nominal_transfer" x-model.number="nominalTransfer" min="0" step="any" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 transition" placeholder="0" value="{{ old('nominal_transfer', 0) }}">
                             </div>
                         </div>
 
-                        {{-- Piutang Preview --}}
-                        <div x-show="sisaUtang > 0" x-transition class="p-4 rounded-xl bg-red-50 border border-red-200">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                    <span class="text-sm font-bold text-red-700">Sisa jadi Piutang</span>
+                        <!-- Utang Input -->
+                        <div x-show="metode.includes('utang')" class="mt-4">
+                            <div class="p-4 rounded-xl bg-red-50 border border-red-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        <span class="text-sm font-bold text-red-700">Utang (Sisa Tagihan)</span>
+                                    </div>
+                                    <span class="text-sm font-black text-red-700" x-text="formatRupiah(sisaUtang)"></span>
                                 </div>
-                                <span class="text-sm font-black text-red-700" x-text="formatRupiah(sisaUtang)"></span>
-                            </div>
-                            <div class="mt-3">
-                                <label class="block text-xs font-semibold text-red-700 mb-1">Tanggal Jatuh Tempo <span class="text-red-500">*</span></label>
-                                <input type="date" name="tanggal_jatuh_tempo" value="{{ old('tanggal_jatuh_tempo', date('Y-m-d', strtotime('+14 days'))) }}" class="w-full px-4 py-2 border border-red-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 transition">
+                                <div class="mt-3">
+                                    <label class="block text-xs font-semibold text-red-700 mb-1">Tanggal Jatuh Tempo <span class="text-red-500">*</span></label>
+                                    <input type="date" name="tanggal_jatuh_tempo" value="{{ old('tanggal_jatuh_tempo', date('Y-m-d', strtotime('+14 days'))) }}" class="w-full px-4 py-2 border border-red-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 transition">
+                                </div>
                             </div>
                         </div>
 
-                        {{-- Catatan --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan</label>
                             <textarea name="catatan" rows="2" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">{{ old('catatan') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Popup Rekening Transfer -->
+                <div x-show="rekeningPopup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-cloak>
+                    <div class="bg-white rounded-2xl shadow-lg p-8 max-w-xs w-full relative">
+                        <button @click="rekeningPopup = false" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                        <h4 class="text-lg font-bold mb-4 text-gray-800">Detail Rekening Transfer</h4>
+                        <div class="space-y-2">
+                            <div><span class="font-semibold">Bank:</span> <span x-text="rekeningDetail.bank"></span></div>
+                            <div><span class="font-semibold">No. Rekening:</span> <span x-text="rekeningDetail.norek"></span></div>
+                            <div><span class="font-semibold">Atas Nama:</span> <span x-text="rekeningDetail.nama"></span></div>
                         </div>
                     </div>
                 </div>

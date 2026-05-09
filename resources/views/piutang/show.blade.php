@@ -134,9 +134,11 @@
                                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Tanggal</th>
                                 <th class="px-6 py-3 text-right text-[10px] font-bold text-gray-400 uppercase">Nominal</th>
                                 <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Metode</th>
+                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Status</th>
                                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Input Oleh</th>
                                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Keterangan</th>
                                 <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Bukti</th>
+                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Verifikasi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
@@ -146,6 +148,13 @@
                                 <td class="px-6 py-4 text-xs text-right font-black text-emerald-600">Rp {{ number_format($bayar->nominal_pembayaran) }}</td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="text-[10px] font-bold uppercase text-gray-500">{{ $bayar->metode_pembayaran }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if($bayar->status_verifikasi == 'pending')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-[10px] font-black uppercase">Pending</span>
+                                    @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">Verified</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-xs text-gray-500">{{ $bayar->user->name }}</td>
                                 <td class="px-6 py-4 text-xs text-gray-500">{{ $bayar->keterangan ?? '-' }}</td>
@@ -158,10 +167,26 @@
                                     <span class="text-gray-300">-</span>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if($bayar->status_verifikasi == 'pending' && Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan']))
+                                    <form action="{{ route('pembayaran-piutang.verify', $bayar) }}" method="POST" onsubmit="return confirm('Tandai transfer ini sudah masuk dan verifikasi pembayaran?')">
+                                        @csrf
+                                        <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition" title="Verifikasi transfer">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                        </button>
+                                    </form>
+                                    @elseif($bayar->status_verifikasi == 'verified')
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700" title="Sudah diverifikasi">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                    </span>
+                                    @else
+                                    <span class="text-gray-300">-</span>
+                                    @endif
+                                </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada riwayat pembayaran.</td>
+                                <td colspan="8" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada riwayat pembayaran.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -175,14 +200,26 @@
 {{-- Modal Pembayaran --}}
 <div x-data="{ 
         open: false,
-        nominal: {{ (int) $piutang->sisa_tagihan }},
         sisa: {{ (int) $piutang->sisa_tagihan }},
+        payments: [
+            { aktif: true, metode: 'cash', nominal: 0 },
+            { aktif: false, metode: 'transfer', nominal: 0 },
+        ],
         formatRupiah(amount) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0);
         },
-        get sisaSetelahBayar() {
-            return Math.max(this.sisa - (Number(this.nominal) || 0), 0);
-        }
+        selectedTotal() {
+            return this.payments.reduce((total, item) => total + (item.aktif ? (Number(item.nominal) || 0) : 0), 0);
+        },
+        verifiedTotal() {
+            return this.payments.reduce((total, item) => total + (item.aktif && item.metode === 'cash' ? (Number(item.nominal) || 0) : 0), 0);
+        },
+        pendingTotal() {
+            return this.payments.reduce((total, item) => total + (item.aktif && item.metode === 'transfer' ? (Number(item.nominal) || 0) : 0), 0);
+        },
+        sisaSetelahBayar() {
+            return Math.max(this.sisa - this.verifiedTotal(), 0);
+        },
      }" 
      x-show="open" 
      @open-modal.window="if($event.detail === 'modal-bayar') open = true"
@@ -208,18 +245,44 @@
                     <input type="date" name="tanggal_pembayaran" value="{{ date('Y-m-d') }}" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal (Rp)</label>
-                    <input type="number" name="nominal_pembayaran" min="1" max="{{ $piutang->sisa_tagihan }}" x-model.number="nominal" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-lg font-black text-emerald-600 focus:ring-2 focus:ring-emerald-500">
-                    <p class="text-[10px] text-gray-400 mt-1 italic">Bisa bayar sebagian atau seluruh sisa tagihan.</p>
-                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Multi Pembayaran</label>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Centang yang dipakai</span>
+                    </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Metode</label>
-                    <select name="metode_pembayaran" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
-                        <option value="cash">Cash</option>
-                        <option value="transfer">Transfer</option>
-                    </select>
+                    <div class="rounded-2xl border border-gray-100 p-4 space-y-3">
+                        <label class="flex items-start gap-3">
+                            <input type="hidden" name="payments[0][metode_pembayaran]" value="cash">
+                            <input type="hidden" name="payments[0][aktif]" value="0">
+                            <input type="checkbox" name="payments[0][aktif]" value="1" x-model="payments[0].aktif" class="mt-3 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="text-sm font-black text-gray-800 uppercase">Cash</span>
+                                    <span class="text-[10px] font-bold text-emerald-600 uppercase">Langsung masuk</span>
+                                </div>
+                                <input type="number" name="payments[0][nominal_pembayaran]" min="1" max="{{ $piutang->sisa_tagihan }}" x-model.number="payments[0].nominal" :required="payments[0].aktif" :disabled="!payments[0].aktif" placeholder="Nominal cash" class="mt-2 w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-50 disabled:text-gray-300">
+                                <input type="hidden" name="payments[0][keterangan]" value="Pembayaran cash">
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="rounded-2xl border border-gray-100 p-4 space-y-3">
+                        <label class="flex items-start gap-3">
+                            <input type="hidden" name="payments[1][metode_pembayaran]" value="transfer">
+                            <input type="hidden" name="payments[1][aktif]" value="0">
+                            <input type="checkbox" name="payments[1][aktif]" value="1" x-model="payments[1].aktif" class="mt-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="text-sm font-black text-gray-800 uppercase">Transfer</span>
+                                    <span class="text-[10px] font-bold text-amber-600 uppercase">Pending verifikasi</span>
+                                </div>
+                                <input type="number" name="payments[1][nominal_pembayaran]" min="1" x-model.number="payments[1].nominal" :required="payments[1].aktif" :disabled="!payments[1].aktif" placeholder="Nominal transfer" class="mt-2 w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-300">
+                                <input type="file" name="payments[1][bukti_pembayaran]" :disabled="!payments[1].aktif" class="mt-2 w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50">
+                                <input type="hidden" name="payments[1][keterangan]" value="Transfer menunggu verifikasi">
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2">
@@ -228,18 +291,17 @@
                         <span class="font-bold text-gray-800">Rp {{ number_format($piutang->sisa_tagihan) }}</span>
                     </div>
                     <div class="flex justify-between text-xs">
-                        <span class="text-gray-500">Dibayar Sekarang</span>
-                        <span class="font-bold text-emerald-600" x-text="formatRupiah(nominal)"></span>
+                        <span class="text-gray-500">Cash Langsung Masuk</span>
+                        <span class="font-bold text-emerald-600" x-text="formatRupiah(verifiedTotal())"></span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Transfer Pending</span>
+                        <span class="font-bold text-amber-600" x-text="formatRupiah(pendingTotal())"></span>
                     </div>
                     <div class="flex justify-between text-sm pt-2 border-t border-dashed border-gray-200">
-                        <span class="font-bold text-gray-700">Sisa Setelah Bayar</span>
-                        <span class="font-black text-red-600" x-text="formatRupiah(sisaSetelahBayar)"></span>
+                        <span class="font-bold text-gray-700">Sisa Setelah Pembayaran Terverifikasi</span>
+                        <span class="font-black text-red-600" x-text="formatRupiah(sisaSetelahBayar())"></span>
                     </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bukti Transfer (Opsional)</label>
-                    <input type="file" name="bukti_pembayaran" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                 </div>
 
                 <div class="pt-4">

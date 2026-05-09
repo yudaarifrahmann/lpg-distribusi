@@ -52,7 +52,9 @@ class Piutang extends Model
      */
     public function updateCalculations()
     {
-        $this->total_terbayar = $this->pembayarans()->sum('nominal_pembayaran');
+        $this->total_terbayar = $this->pembayarans()
+            ->where('status_verifikasi', 'verified')
+            ->sum('nominal_pembayaran');
         $this->sisa_tagihan = $this->nominal_piutang - $this->total_terbayar;
 
         if ($this->total_terbayar >= $this->nominal_piutang) {

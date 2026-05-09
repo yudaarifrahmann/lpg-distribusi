@@ -24,10 +24,16 @@ class StorePembayaranPiutangRequest extends FormRequest
         return [
             'piutang_id' => 'required|exists:piutangs,id',
             'tanggal_pembayaran' => 'required|date',
-            'nominal_pembayaran' => 'required|numeric|min:1',
-            'metode_pembayaran' => 'required|in:cash,transfer',
+            'nominal_pembayaran' => 'required_without:payments|nullable|numeric|min:1',
+            'metode_pembayaran' => 'required_without:payments|nullable|in:cash,transfer',
             'bukti_pembayaran' => 'nullable|image|max:2048',
             'keterangan' => 'nullable|string',
+            'payments' => 'nullable|array',
+            'payments.*.aktif' => 'nullable|boolean',
+            'payments.*.nominal_pembayaran' => 'nullable|numeric|min:1',
+            'payments.*.metode_pembayaran' => 'nullable|in:cash,transfer',
+            'payments.*.bukti_pembayaran' => 'nullable|image|max:2048',
+            'payments.*.keterangan' => 'nullable|string',
         ];
     }
 }

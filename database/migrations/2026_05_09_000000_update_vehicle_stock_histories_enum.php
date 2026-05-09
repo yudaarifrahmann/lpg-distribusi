@@ -12,7 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE `vehicle_stock_histories` MODIFY `jenis_mutasi` ENUM('penebusan', 'distribusi_ke_truk', 'penjualan', 'retur_gudang', 'penyesuaian_stok') NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE `vehicle_stock_histories` MODIFY `jenis_mutasi` ENUM('penebusan', 'distribusi_ke_truk', 'penjualan', 'retur_gudang', 'penyesuaian_stok') NOT NULL");
+        }
     }
 
     /**
@@ -20,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE `vehicle_stock_histories` MODIFY `jenis_mutasi` ENUM('distribusi_ke_truk', 'penjualan', 'retur_gudang') NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE `vehicle_stock_histories` MODIFY `jenis_mutasi` ENUM('distribusi_ke_truk', 'penjualan', 'retur_gudang') NOT NULL");
+        }
     }
 };

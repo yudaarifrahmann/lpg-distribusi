@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -18,7 +19,13 @@ return new class extends Migration
         });
         
         // Add 'split' to the ENUM values using raw SQL since doctrine/dbal might not be available
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE penjualans MODIFY COLUMN metode_pembayaran ENUM('cash', 'transfer', 'utang', 'split') NOT NULL");
+        if (DB::getDriverName() === 'sqlite') {
+            Schema::table('penjualans', function (Blueprint $table) {
+                $table->string('metode_pembayaran')->change();
+            });
+        } else {
+            DB::statement("ALTER TABLE penjualans MODIFY COLUMN metode_pembayaran ENUM('cash', 'transfer', 'utang', 'split') NOT NULL");
+        }
     }
 
     /**
@@ -30,6 +37,8 @@ return new class extends Migration
             $table->dropColumn(['nominal_cash', 'nominal_transfer', 'status_transfer']);
         });
         
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE penjualans MODIFY COLUMN metode_pembayaran ENUM('cash', 'transfer', 'utang') NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE penjualans MODIFY COLUMN metode_pembayaran ENUM('cash', 'transfer', 'utang') NOT NULL");
+        }
     }
 };

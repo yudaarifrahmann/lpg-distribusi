@@ -27,8 +27,8 @@ class PenjualanController extends Controller
     {
         $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'lpgPrice']);
 
-        // Role based filtering
-        if (Auth::user()->hasRole('supir_knek')) {
+        // Role based filtering - Superadmin and Finance sees all
+        if (Auth::user()->hasRole('supir_knek') && !Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan'])) {
             $driver = Auth::user()->driver;
             if ($driver) {
                 $query->where('driver_id', $driver->id);
