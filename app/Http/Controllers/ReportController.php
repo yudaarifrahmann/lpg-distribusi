@@ -184,6 +184,94 @@ class ReportController extends Controller
     }
 
     /**
+     * Laporan Global (Semua Pemasukan, Pengeluaran, dan Retur Gudang)
+     */
+    public function globalReport(Request $request)
+    {
+        $startDate = $request->filled('start_date') ? $request->start_date : Carbon::now()->startOfMonth()->toDateString();
+        $endDate = $request->filled('end_date') ? $request->end_date : Carbon::now()->endOfMonth()->toDateString();
+
+        // Get Penjualan (Income)
+        $penjualans = Penjualan::with(['truck', 'supir'])
+            ->whereBetween('tanggal_penjualan', [$startDate, $endDate])
+            ->get()
+            ->map(function($item) {
+                return [
+                    'type' => 'penjualan',
+                    'tanggal' => $item->tanggal_penjualan,
+                    'nama_truk' => $item->truck->nama_truk ?? '-',
+                    'nama_supir' => $item->supir->nama ?? '-',
+                    'nominal' => $item->total_penjualan,
+                    'jumlah_tabung' => $item->jumlah_tabung,
+                    'keterangan' => 'Penjualan - ' . $item->nomor_invoice,
+                    'status' => 'Pemasukan',
+                ];
+            });
+
+        // Get Expenses (Pengeluaran)
+        $expenses = Expense::with(['category', 'user'])
+            ->where('status_verifikasi', 'disetujui')
+            ->whereBetween('tanggal_pengeluaran', [$startDate, $endDate])
+            ->get()
+            ->map(function($item) {
+                return [
+                    'type' => 'expense',
+                    'tanggal' => $item->tanggal_pengeluaran,
+                    'nama_truk' => '-',
+                    'nama_supir' => $item->user->name ?? '-',
+                    'nominal' => $item->nominal,
+                    'jumlah_tabung' => 0,
+                    'keterangan' => 'Pengeluaran - ' . ($item->category ? $item->category->nama_kategori : $item->nama_pengeluaran),
+                    'status' => 'Pengeluaran',
+                ];
+            });
+
+        // Get Retur Tabung (Warehouse Returns)
+        $returs = ReturTabung::with(['truck', 'supir'])
+            ->whereBetween('tanggal_retur', [$startDate, $endDate])
+            ->where('status_retur', 'diterima')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'type' => 'retur',
+                    'tanggal' => $item->tanggal_retur,
+                    'nama_truk' => $item->truck->nama_truk ?? '-',
+                    'nama_supir' => $item->supir->nama ?? '-',
+                    'nominal' => 0,
+                    'jumlah_tabung' => $item->jumlah_retur,
+                    'keterangan' => 'Retur Tabung - ' . $item->kondisi_tabung,
+                    'status' => 'Retur Gudang',
+                ];
+            });
+
+        // Combine all data
+        $allData = collect()
+            ->merge($penjualans)
+            ->merge($expenses)
+            ->merge($returs)
+            ->sortBy('tanggal');
+
+        // Calculate Summary
+        $summary = [
+            'total_pemasukan' => $penjualans->sum('nominal'),
+            'total_pengeluaran' => $expenses->sum('nominal'),
+            'total_retur_tabung' => $returs->sum('jumlah_tabung'),
+            'total_tabung_penjualan' => $penjualans->sum('jumlah_tabung'),
+            'saldo' => $penjualans->sum('nominal') - $expenses->sum('nominal'),
+        ];
+
+        return view('report.global', compact(
+            'allData',
+            'penjualans',
+            'expenses',
+            'returs',
+            'summary',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    /**
      * Helper to apply common filters
      */
     private function applyFilters($query, $request)

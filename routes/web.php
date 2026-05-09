@@ -105,6 +105,7 @@ Route::middleware('auth')->group(function () {
 
     // Laporan
     Route::middleware('can:view laporan')->prefix('laporan')->group(function () {
+        Route::get('/global', [ReportController::class, 'globalReport'])->name('report.global');
         Route::get('/penjualan', [ReportController::class, 'penjualan'])->name('report.penjualan');
         Route::get('/penjualan/export', [ReportController::class, 'exportPenjualan'])->name('report.penjualan.export');
         Route::get('/pengeluaran', [ReportController::class, 'pengeluaran'])->name('report.pengeluaran');

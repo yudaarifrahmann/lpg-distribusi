@@ -176,6 +176,9 @@
                         <svg class="w-4 h-4 transform transition-transform duration-200" :class="{ 'rotate-180': reportOpen }" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
                     </button>
                     <div x-show="reportOpen" x-collapse class="ml-4 mt-1 space-y-1 border-l-2 border-gray-700 pl-3">
+                        <a href="{{ route('report.global') }}" class="sidebar-link text-xs {{ request()->routeIs('report.global') ? 'active' : '' }}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-3 {{ request()->routeIs('report.global') ? 'bg-white' : 'bg-gray-600' }}"></span>Global
+                        </a>
                         <a href="{{ route('report.penjualan') }}" class="sidebar-link text-xs {{ request()->routeIs('report.penjualan') ? 'active' : '' }}">
                             <span class="w-1.5 h-1.5 rounded-full mr-3 {{ request()->routeIs('report.penjualan') ? 'bg-white' : 'bg-gray-600' }}"></span>Penjualan
                         </a>
