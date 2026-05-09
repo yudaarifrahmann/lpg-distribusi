@@ -11,7 +11,7 @@
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
             </div>
             <p class="text-gray-500 font-medium">Total Stok Saat Ini</p>
-            <h2 class="text-5xl font-extrabold text-gray-800 mt-2">{{ number_format($summary->stok_saat_ini) }}</h2>
+            <h2 class="text-5xl font-extrabold text-gray-800 mt-2">{{ $summary ? number_format($summary->stok_saat_ini) : 0 }}</h2>
             <p class="text-sm text-gray-400 mt-2">Tabung LPG 3Kg</p>
             
             <div class="mt-8 w-full border-t border-gray-50 pt-6">

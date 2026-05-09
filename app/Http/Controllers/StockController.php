@@ -12,6 +12,10 @@ class StockController extends Controller
     {
         $summary = StockSummary::first();
         
+        if (!$summary) {
+            $summary = StockSummary::create(['stok_saat_ini' => 0]);
+        }
+        
         $query = StockHistory::query();
 
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_akhir')) {
