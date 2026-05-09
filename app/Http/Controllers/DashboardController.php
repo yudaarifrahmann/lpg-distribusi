@@ -33,40 +33,116 @@ class DashboardController extends Controller
         $stats = Cache::remember($cacheKey, 300, function() use ($today, $thisMonthStart, $thisMonthEnd) {
             $driver = Auth::user()->hasRole('supir_knek') ? Auth::user()->driver : null;
             
+            // Base queries for conditional filtering
+            $salesChartQuery = Penjualan::select(DB::raw('DATE(tanggal_penjualan) as date'), DB::raw('SUM(total_penjualan) as total'))
+                ->whereBetween('tanggal_penjualan', [Carbon::now()->subDays(14), Carbon::now()]);
+                
+            $topPangkalanQuery = Penjualan::select('pangkalans.nama_pangkalan', DB::raw('SUM(penjualans.jumlah_tabung) as total'))
+                ->join('pangkalans', 'penjualans.pangkalan_id', '=', 'pangkalans.id')
+                ->whereBetween('penjualans.tanggal_penjualan', [$thisMonthStart, $thisMonthEnd]);
+                
+            $monthlyPenjualanQuery = Penjualan::whereBetween('tanggal_penjualan', [$thisMonthStart, $thisMonthEnd]);
+
+            $stokGudang = StockSummary::first()?->stok_saat_ini ?? 0;
+            $stokKendaraan = VehicleStock::sum('stok_saat_ini');
+            $penebusanGlobal = Penebusan::whereBetween('tanggal_penebusan', [$thisMonthStart, $thisMonthEnd])->sum('total_penebusan');
+            $pengeluaranGlobal = Expense::where('status_verifikasi', 'disetujui')->whereBetween('tanggal_pengeluaran', [$thisMonthStart, $thisMonthEnd])->sum('nominal');
+
+            $stokGudang = StockSummary::first()?->stok_saat_ini ?? 0;
+            $stokKendaraan = VehicleStock::sum('stok_saat_ini');
+            $penebusanGlobal = Penebusan::whereBetween('tanggal_penebusan', [$thisMonthStart, $thisMonthEnd])->sum('total_penebusan');
+            $pengeluaranGlobal = Expense::where('status_verifikasi', 'disetujui')->whereBetween('tanggal_pengeluaran', [$thisMonthStart, $thisMonthEnd])->sum('nominal');
+
+            if (Auth::user()->hasRole('supir_knek')) {
+                $driver = Auth::user()->driver;
+                $driverId = $driver ? $driver->id : -1;
+                
+                $salesChartQuery->where('driver_id', $driverId);
+                $topPangkalanQuery->where('penjualans.driver_id', $driverId);
+                $monthlyPenjualanQuery->where('driver_id', $driverId);
+                
+                // For supir, find their truck via the latest assignment (Surat Jalan)
+                if ($driver) {
+                    $latestSJ = SuratJalan::where(function($q) use ($driverId) {
+                        $q->where('driver_id', $driverId)
+                          ->orWhere('knek_id', $driverId);
+                    })->latest()->first();
+                    
+                    if ($latestSJ) {
+                        $stokKendaraan = VehicleStock::where('truck_id', $latestSJ->truck_id)->sum('stok_saat_ini');
+                    } else {
+                        $stokKendaraan = 0;
+                    }
+                } else {
+                    $stokKendaraan = 0;
+                }
+                
+                // For supir, redemption and expenses are NOT their business
+                $penebusanGlobal = 0;
+                $pengeluaranGlobal = 0;
+            }
+
             return [
                 'countPangkalan' => Pangkalan::count(),
                 'countTruck' => Truck::count(),
                 'countDriver' => Driver::count(),
-                'stokSaatIni' => StockSummary::first()?->stok_saat_ini ?? 0,
-                'stokKendaraanTotal' => VehicleStock::sum('stok_saat_ini'),
+                'stokSaatIni' => $stokGudang,
+                'stokKendaraanTotal' => $stokKendaraan,
                 'totalReturHariIni' => ReturTabung::whereDate('tanggal_retur', $today)->where('status_retur', 'diterima')->sum('jumlah_retur'),
                 'totalTabungRusak' => ReturTabung::where('kondisi_tabung', 'rusak')->where('status_retur', 'diterima')->sum('jumlah_retur'),
                 'totalMutasiHariIni' => StockMutation::whereDate('tanggal', $today)->count(),
-                'salesChart' => Penjualan::select(DB::raw('DATE(tanggal_penjualan) as date'), DB::raw('SUM(total_penjualan) as total'))
-                    ->whereBetween('tanggal_penjualan', [Carbon::now()->subDays(14), Carbon::now()])
-                    ->groupBy('date')->orderBy('date')->get(),
-                'topPangkalan' => Penjualan::select('pangkalans.nama_pangkalan', DB::raw('SUM(penjualans.jumlah_tabung) as total'))
-                    ->join('pangkalans', 'penjualans.pangkalan_id', '=', 'pangkalans.id')
-                    ->whereBetween('penjualans.tanggal_penjualan', [$thisMonthStart, $thisMonthEnd])
-                    ->groupBy('pangkalans.nama_pangkalan')->orderByDesc('total')->limit(5)->get(),
+                'salesChart' => $salesChartQuery->groupBy('date')->orderBy('date')->get(),
+                'topPangkalan' => $topPangkalanQuery->groupBy('pangkalans.nama_pangkalan')->orderByDesc('total')->limit(5)->get(),
                 'monthlyLaba' => [
-                    'penjualan' => Penjualan::whereBetween('tanggal_penjualan', [$thisMonthStart, $thisMonthEnd])->sum('total_penjualan'),
-                    'penebusan' => Penebusan::whereBetween('tanggal_penebusan', [$thisMonthStart, $thisMonthEnd])->sum('total_penebusan'),
-                    'pengeluaran' => Expense::where('status_verifikasi', 'disetujui')->whereBetween('tanggal_pengeluaran', [$thisMonthStart, $thisMonthEnd])->sum('nominal'),
+                    'penjualan' => $monthlyPenjualanQuery->sum('total_penjualan'),
+                    'penebusan' => $penebusanGlobal,
+                    'pengeluaran' => $pengeluaranGlobal,
                 ]
             ];
         });
 
-        // Real-time stats (not cached as they change frequently and are cheap)
+        // Real-time stats
         $penjualanTodayQuery = Penjualan::whereDate('tanggal_penjualan', $today);
+        $piutangQuery = Piutang::where('status_piutang', '!=', 'lunas');
+        $belumLunasQuery = Piutang::where('status_piutang', 'belum_bayar');
+        $cicilanQuery = Piutang::where('status_piutang', 'mencicil');
+
         if (Auth::user()->hasRole('supir_knek')) {
             $driver = Auth::user()->driver;
-            $penjualanTodayQuery->where('driver_id', $driver ? $driver->id : 0);
+            $driverId = $driver ? $driver->id : 0;
+            
+            $penjualanTodayQuery->where('driver_id', $driverId);
+            
+            $piutangQuery->whereHas('penjualan', function($q) use ($driverId) {
+                $q->where('driver_id', $driverId);
+            });
+            $belumLunasQuery->whereHas('penjualan', function($q) use ($driverId) {
+                $q->where('driver_id', $driverId);
+            });
+            $cicilanQuery->whereHas('penjualan', function($q) use ($driverId) {
+                $q->where('driver_id', $driverId);
+            });
         }
+
         $totalPenjualanHariIni = $penjualanTodayQuery->sum('total_penjualan');
-        $totalPiutangAktif = Piutang::where('status_piutang', '!=', 'lunas')->sum('sisa_tagihan');
-        $totalBelumLunas = Piutang::where('status_piutang', 'belum_bayar')->count();
-        $totalCicilan = Piutang::where('status_piutang', 'mencicil')->count();
+        $totalPiutangAktif = $piutangQuery->sum('sisa_tagihan');
+        $totalBelumLunas = $belumLunasQuery->count();
+        $totalCicilan = $cicilanQuery->count();
+
+        // Piutang Jatuh Tempo
+        $overduePiutangsQuery = Piutang::with('pangkalan')
+            ->where('status_piutang', '!=', 'lunas')
+            ->whereDate('tanggal_jatuh_tempo', '<=', $today);
+
+        if (Auth::user()->hasRole('supir_knek')) {
+            $driver = Auth::user()->driver;
+            $driverId = $driver ? $driver->id : 0;
+            $overduePiutangsQuery->whereHas('penjualan', function($q) use ($driverId) {
+                $q->where('driver_id', $driverId);
+            });
+        }
+
+        $overduePiutangs = $overduePiutangsQuery->orderBy('tanggal_jatuh_tempo', 'asc')->get();
 
         // Merge cached and real-time data
         $data = array_merge($stats, [
@@ -74,6 +150,7 @@ class DashboardController extends Controller
             'totalPiutangAktif' => $totalPiutangAktif,
             'totalBelumLunas' => $totalBelumLunas,
             'totalCicilan' => $totalCicilan,
+            'overduePiutangs' => $overduePiutangs,
         ]);
         
         $data['monthlyLaba']['net'] = $data['monthlyLaba']['penjualan'] - $data['monthlyLaba']['penebusan'] - $data['monthlyLaba']['pengeluaran'];

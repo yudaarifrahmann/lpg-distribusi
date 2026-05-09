@@ -22,15 +22,20 @@ class Penjualan extends Model
         'jumlah_tabung',
         'harga_satuan',
         'total_penjualan',
+        'nominal_cash',
+        'nominal_transfer',
         'metode_pembayaran',
         'status_pembayaran',
+        'status_transfer',
         'catatan',
     ];
 
     protected $casts = [
         'tanggal_penjualan' => 'date',
-        'total_penjualan' => 'decimal:2',
-        'harga_satuan' => 'decimal:2',
+        'total_penjualan'   => 'decimal:2',
+        'harga_satuan'      => 'decimal:2',
+        'nominal_cash'      => 'decimal:2',
+        'nominal_transfer'  => 'decimal:2',
     ];
 
     public function suratJalan(): BelongsTo

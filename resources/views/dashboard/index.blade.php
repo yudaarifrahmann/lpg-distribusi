@@ -4,6 +4,49 @@
 @section('page_title', 'Dashboard Statistics')
 
 @section('content')
+{{-- Overdue Piutang Alert --}}
+@if($overduePiutangs->count() > 0)
+<div class="mb-8" x-data="{ open: true }" x-show="open">
+    <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-2xl shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4">
+            <button @click="open = false" class="text-red-400 hover:text-red-600 transition">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </button>
+        </div>
+        <div class="flex items-start">
+            <div class="flex-shrink-0 bg-red-100 p-3 rounded-xl text-red-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <div class="ml-5">
+                <h3 class="text-lg font-black text-red-800 uppercase tracking-tight">Peringatan: Piutang Jatuh Tempo!</h3>
+                <p class="text-sm text-red-700 mt-1">Terdapat <b>{{ $overduePiutangs->count() }} Pangkalan</b> yang memiliki piutang melewati batas tanggal jatuh tempo. Segera lakukan penagihan.</p>
+                
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    @foreach($overduePiutangs->take(3) as $p)
+                    <a href="{{ route('piutang.show', $p) }}" class="flex items-center p-3 bg-white/50 hover:bg-white rounded-xl border border-red-200 transition group">
+                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-xs mr-3">
+                            {{ $loop->iteration }}
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-red-800 uppercase leading-none">{{ $p->pangkalan->nama_pangkalan }}</p>
+                            <p class="text-xs font-black text-red-600">Rp {{ number_format($p->sisa_tagihan) }}</p>
+                        </div>
+                        <svg class="w-4 h-4 ml-auto text-red-400 group-hover:translate-x-1 transition" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                    </a>
+                    @endforeach
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ route('piutang.index') }}" class="text-xs font-bold text-red-800 hover:underline flex items-center">
+                        Lihat Semua Daftar Piutang
+                        <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 {{-- Summary Row 1 --}}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-gray-900 p-6 rounded-2xl shadow-xl text-white">

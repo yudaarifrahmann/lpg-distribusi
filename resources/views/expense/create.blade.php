@@ -18,21 +18,11 @@
                 <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b border-gray-50 pb-4">Informasi Utama</h3>
                 
                 <div class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal <span class="text-red-500">*</span></label>
                             <input type="date" name="tanggal_pengeluaran" value="{{ date('Y-m-d') }}" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
                             @error('tanggal_pengeluaran')<p class="text-red-500 text-[10px] mt-1">{{ $message }}</p>@enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategori <span class="text-red-500">*</span></label>
-                            <select name="expense_category_id" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
-                                <option value="">Pilih Kategori</option>
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('expense_category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->nama_kategori }}</option>
-                                @endforeach
-                            </select>
-                            @error('expense_category_id')<p class="text-red-500 text-[10px] mt-1">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
@@ -99,11 +89,8 @@
 
                 <div class="pt-8 mt-8 border-t border-gray-50">
                     <button type="submit" class="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-xl hover:bg-black transition transform active:scale-95">
-                        AJUKAN PENGELUARAN
+                        SIMPAN PENGELUARAN
                     </button>
-                    <p class="text-[10px] text-gray-400 text-center mt-3 leading-relaxed italic">
-                        Pengeluaran akan diverifikasi oleh Admin Keuangan/SuperAdmin.
-                    </p>
                 </div>
             </div>
         </div>

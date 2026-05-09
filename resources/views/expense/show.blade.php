@@ -36,7 +36,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
                     <div>
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Kategori</p>
-                        <p class="text-sm font-bold text-gray-800">{{ $expense->category->nama_kategori }}</p>
+                        <p class="text-sm font-bold text-gray-800">{{ $expense->category ? $expense->category->nama_kategori : '-' }}</p>
                     </div>
                     <div>
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Tanggal</p>
@@ -86,33 +86,7 @@
 
         {{-- Right: Verification & Audit --}}
         <div class="space-y-6">
-            {{-- Verification Form (Admins only and only if pending) --}}
-            @if(Auth::user()->can('edit pengeluaran') && $expense->status_verifikasi == 'pending')
-            <div class="bg-gray-900 p-8 rounded-2xl shadow-xl text-white">
-                <h3 class="text-sm font-bold uppercase tracking-widest mb-6 text-gray-400">Verifikasi Pengeluaran</h3>
-                <form action="{{ route('expense.verify', $expense) }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Tindakan</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="status" value="disetujui" class="hidden peer" checked>
-                                <div class="py-3 text-center rounded-xl border border-gray-700 peer-checked:bg-emerald-600 peer-checked:border-emerald-500 transition font-bold text-xs">Setujui</div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="status" value="ditolak" class="hidden peer">
-                                <div class="py-3 text-center rounded-xl border border-gray-700 peer-checked:bg-red-600 peer-checked:border-red-500 transition font-bold text-xs">Tolak</div>
-                            </label>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Catatan Verifikasi</label>
-                        <textarea name="catatan_verifikasi" rows="3" class="w-full bg-gray-800 border-gray-700 rounded-xl text-xs focus:ring-emerald-500" placeholder="Opsional..."></textarea>
-                    </div>
-                    <button type="submit" class="w-full py-4 bg-emerald-500 text-white font-black rounded-2xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition">SIMPAN VERIFIKASI</button>
-                </form>
-            </div>
-            @endif
+
 
             {{-- Audit Trail --}}
             <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -149,18 +123,7 @@
                 </div>
             </div>
 
-            {{-- Quick Info for Supir --}}
-            @if(Auth::user()->hasRole('supir_knek') && $expense->status_verifikasi == 'pending')
-            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                <div class="flex items-center text-blue-700 mb-2 font-bold text-xs">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-                    Informasi
-                </div>
-                <p class="text-[10px] text-blue-600 leading-relaxed">
-                    Pengeluaran Anda sedang dalam tahap antrian verifikasi. Harap tunggu hingga Admin Keuangan menyetujui klaim Anda.
-                </p>
-            </div>
-            @endif
+
         </div>
     </div>
 </div>

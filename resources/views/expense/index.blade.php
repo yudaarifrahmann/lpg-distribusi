@@ -28,12 +28,7 @@
         <div class="sm:col-span-1">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari deskripsi..." class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
         </div>
-        <select name="category_id" class="px-4 py-2 border border-gray-200 rounded-xl text-sm">
-            <option value="">Semua Kategori</option>
-            @foreach($categories as $cat)
-            <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->nama_kategori }}</option>
-            @endforeach
-        </select>
+
         <select name="status" class="px-4 py-2 border border-gray-200 rounded-xl text-sm">
             <option value="">Semua Status</option>
             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -63,7 +58,7 @@
                 <tr class="hover:bg-gray-50/50 transition">
                     <td class="px-6 py-4 text-xs font-bold text-gray-600">{{ $exp->tanggal_pengeluaran->format('d/m/Y') }}</td>
                     <td class="px-6 py-4">
-                        <span class="px-2 py-1 bg-gray-100 text-[10px] font-bold text-gray-500 rounded uppercase">{{ $exp->category->nama_kategori }}</span>
+                        <span class="px-2 py-1 bg-gray-100 text-[10px] font-bold text-gray-500 rounded uppercase">{{ $exp->category ? $exp->category->nama_kategori : 'TANPA KATEGORI' }}</span>
                     </td>
                     <td class="px-6 py-4">
                         <p class="text-xs font-bold text-gray-800">{{ $exp->nama_pengeluaran }}</p>

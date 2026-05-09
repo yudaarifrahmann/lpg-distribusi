@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->date('tanggal');
             $table->foreignId('truck_id')->constrained();
-            $table->enum('jenis_mutasi', ['distribusi_ke_truk', 'penjualan', 'retur_ke_gudang']);
+            $table->enum('jenis_mutasi', ['penebusan', 'distribusi_ke_truk', 'penjualan', 'retur_gudang', 'penyesuaian_stok']);
             $table->string('referensi'); // e.g., nomor_surat_jalan, nomor_invoice, etc.
             $table->integer('stok_masuk')->default(0);
             $table->integer('stok_keluar')->default(0);

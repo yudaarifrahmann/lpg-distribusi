@@ -210,7 +210,7 @@ class SuratJalanController extends Controller
             VehicleStockHistory::create([
                 'tanggal' => now(),
                 'truck_id' => $suratJalan->truck_id,
-                'jenis_mutasi' => 'retur_ke_gudang',
+                'jenis_mutasi' => 'retur_gudang',
                 'referensi' => 'BATAL-' . $suratJalan->nomor_surat_jalan,
                 'stok_masuk' => 0,
                 'stok_keluar' => $suratJalan->jumlah_tabung,

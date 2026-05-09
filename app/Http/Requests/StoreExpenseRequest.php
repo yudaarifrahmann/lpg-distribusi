@@ -23,7 +23,7 @@ class StoreExpenseRequest extends FormRequest
     {
         return [
             'tanggal_pengeluaran' => 'required|date',
-            'expense_category_id' => 'required|exists:expense_categories,id',
+            'expense_category_id' => 'nullable|exists:expense_categories,id',
             'nama_pengeluaran' => 'required|string|max:255',
             'nominal' => 'required|numeric|min:0',
             'metode_pembayaran' => 'required|in:cash,transfer',

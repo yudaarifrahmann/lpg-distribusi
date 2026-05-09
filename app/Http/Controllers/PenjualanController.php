@@ -91,71 +91,87 @@ class PenjualanController extends Controller
     public function store(StorePenjualanRequest $request)
     {
         $data = $request->validated();
-        
+
         DB::beginTransaction();
         try {
-            $sj = SuratJalan::findOrFail($data['surat_jalan_id']);
-            $price = LpgPrice::findOrFail($data['lpg_price_id']);
+            $sj       = SuratJalan::findOrFail($data['surat_jalan_id']);
+            $price    = LpgPrice::findOrFail($data['lpg_price_id']);
             $pangkalan = $this->resolvePangkalan($data);
-            
+
             // 1. Check Vehicle Stock
             $vStock = VehicleStock::where('truck_id', $sj->truck_id)->first();
             if (!$vStock || $vStock->stok_saat_ini < $data['jumlah_tabung']) {
                 throw new \Exception('Stok di kendaraan tidak mencukupi. Stok saat ini: ' . ($vStock ? $vStock->stok_saat_ini : 0));
             }
 
-            // 2. Prepare Data
-            $total = $price->harga * $data['jumlah_tabung'];
+            // 2. Hitung nominal
+            $total          = $price->harga * $data['jumlah_tabung'];
+            $nominalCash     = (float) ($data['nominal_cash'] ?? 0);
+            $nominalTransfer = (float) ($data['nominal_transfer'] ?? 0);
+            $nominalUtang    = max(0, $total - $nominalCash - $nominalTransfer);
+
+            // 3. Tentukan metode & status
+            $paidComponents = [];
+            if ($nominalCash > 0)     $paidComponents[] = 'cash';
+            if ($nominalTransfer > 0) $paidComponents[] = 'transfer';
+            if ($nominalUtang > 0)    $paidComponents[] = 'utang';
+
+            $metode = count($paidComponents) > 1 ? 'split' : ($paidComponents[0] ?? 'cash');
+            $statusPembayaran = ($nominalUtang > 0) ? 'belum_lunas' : 'lunas';
+            $statusTransfer   = ($nominalTransfer > 0) ? 'pending' : null;
+
+            // 4. Invoice
             $invoice = 'INV-' . Carbon::now()->format('YmdHis') . rand(10, 99);
-            
-            $penjualanData = [
-                'nomor_invoice' => $invoice,
-                'tanggal_penjualan' => $data['tanggal_penjualan'],
-                'surat_jalan_id' => $sj->id,
-                'truck_id' => $sj->truck_id,
-                'driver_id' => $sj->driver_id,
-                'pangkalan_id' => $pangkalan->id,
-                'lpg_price_id' => $price->id,
-                'jumlah_tabung' => $data['jumlah_tabung'],
-                'harga_satuan' => $price->harga,
-                'total_penjualan' => $total,
-                'metode_pembayaran' => $data['metode_pembayaran'],
-                'status_pembayaran' => $data['metode_pembayaran'] == 'utang' ? 'belum_lunas' : 'lunas',
-                'catatan' => $data['catatan'] ?? null,
-            ];
 
-            // 3. Create Penjualan
-            $penjualan = Penjualan::create($penjualanData);
+            // 5. Simpan penjualan
+            $penjualan = Penjualan::create([
+                'nomor_invoice'    => $invoice,
+                'tanggal_penjualan'=> $data['tanggal_penjualan'],
+                'surat_jalan_id'   => $sj->id,
+                'truck_id'         => $sj->truck_id,
+                'driver_id'        => $sj->driver_id,
+                'pangkalan_id'     => $pangkalan->id,
+                'lpg_price_id'     => $price->id,
+                'jumlah_tabung'    => $data['jumlah_tabung'],
+                'harga_satuan'     => $price->harga,
+                'total_penjualan'  => $total,
+                'nominal_cash'     => $nominalCash,
+                'nominal_transfer' => $nominalTransfer,
+                'metode_pembayaran'=> $metode,
+                'status_pembayaran'=> $statusPembayaran,
+                'status_transfer'  => $statusTransfer,
+                'catatan'          => $data['catatan'] ?? null,
+            ]);
 
-            // 4. Decrease Vehicle Stock
+            // 6. Kurangi stok kendaraan
             $newVStock = $vStock->stok_saat_ini - $data['jumlah_tabung'];
             $vStock->update(['stok_saat_ini' => $newVStock]);
 
-            // 5. Create Vehicle History
+            // 7. History kendaraan
             VehicleStockHistory::create([
-                'tanggal' => $data['tanggal_penjualan'],
-                'truck_id' => $sj->truck_id,
-                'jenis_mutasi' => 'penjualan',
-                'referensi' => $invoice,
-                'stok_masuk' => 0,
+                'tanggal'     => $data['tanggal_penjualan'],
+                'truck_id'    => $sj->truck_id,
+                'jenis_mutasi'=> 'penjualan',
+                'referensi'   => $invoice,
+                'stok_masuk'  => 0,
                 'stok_keluar' => $data['jumlah_tabung'],
-                'stok_akhir' => $newVStock,
-                'keterangan' => 'Penjualan ke Pangkalan: ' . $pangkalan->nama_pangkalan,
+                'stok_akhir'  => $newVStock,
+                'keterangan'  => 'Penjualan ke Pangkalan: ' . $pangkalan->nama_pangkalan,
             ]);
 
-            // 6. Create Piutang if debt
-            if ($data['metode_pembayaran'] == 'utang') {
+            // 8. Buat Piutang jika ada sisa tagihan
+            if ($nominalUtang > 0) {
                 Piutang::create([
-                    'penjualan_id' => $penjualan->id,
-                    'pangkalan_id' => $pangkalan->id,
-                    'nominal_piutang' => $total,
-                    'sisa_tagihan' => $total,
-                    'tanggal_jatuh_tempo' => $data['tanggal_jatuh_tempo'],
-                    'status_piutang' => 'belum_bayar',
+                    'penjualan_id'        => $penjualan->id,
+                    'pangkalan_id'        => $pangkalan->id,
+                    'nominal_piutang'     => $nominalUtang,
+                    'sisa_tagihan'        => $nominalUtang,
+                    'tanggal_jatuh_tempo' => $data['tanggal_jatuh_tempo'] ?? Carbon::now()->addDays(14),
+                    'status_piutang'      => 'belum_bayar',
                 ]);
             }
 
-            self::log('Input Penjualan: ' . $invoice, 'penjualan', null, $penjualanData);
+            self::log('Input Penjualan: ' . $invoice, 'penjualan', null, $penjualan->toArray());
 
             DB::commit();
             return redirect()->route('penjualan.index')->with('success', 'Transaksi Penjualan berhasil disimpan.');
@@ -191,11 +207,28 @@ class PenjualanController extends Controller
 
         return Pangkalan::create([
             'nama_pangkalan' => $namaPangkalan,
-            'nama_pemilik' => $namaPangkalan,
-            'alamat' => '-',
-            'no_hp' => '-',
-            'status' => 'aktif',
+            'nama_pemilik'   => $namaPangkalan,
+            'alamat'         => '-',
+            'no_hp'          => '-',
+            'status'         => 'aktif',
         ]);
+    }
+
+    /**
+     * Verify a pending bank transfer for a sale.
+     * Only finance admin should be able to call this.
+     */
+    public function verifyTransfer(Penjualan $penjualan)
+    {
+        if ($penjualan->status_transfer !== 'pending') {
+            return back()->with('error', 'Transfer ini tidak dalam status pending.');
+        }
+
+        $penjualan->update(['status_transfer' => 'verified']);
+
+        self::log('Verifikasi Transfer: ' . $penjualan->nomor_invoice, 'penjualan', ['status_transfer' => 'pending'], $penjualan->toArray());
+
+        return back()->with('success', 'Transfer untuk ' . $penjualan->nomor_invoice . ' berhasil diverifikasi.');
     }
 
     /**

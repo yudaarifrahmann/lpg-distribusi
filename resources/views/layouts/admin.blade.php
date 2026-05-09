@@ -67,7 +67,7 @@
                     <button @click="masterDataOpen = !masterDataOpen" class="sidebar-link w-full justify-between {{ request()->is('master-data/*') ? 'text-blue-400' : '' }}">
                         <span class="flex items-center">
                             <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>
-                            Master Data
+                            Data Master
                         </span>
                         <svg class="w-4 h-4 transform transition-transform duration-200" :class="{ 'rotate-180': masterDataOpen }" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
                     </button>
@@ -112,14 +112,7 @@
                 @can('view stock')
                 <a href="{{ route('stock.index') }}" class="sidebar-link {{ request()->routeIs('stock.index') ? 'active' : '' }}">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 9a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM5 13a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
-                    Stok Gudang
-                </a>
-                @endcan
-
-                @can('view vehicle stock')
-                <a href="{{ route('vehicle-stock.index') }}" class="sidebar-link {{ request()->routeIs('vehicle-stock.index') ? 'active' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/><path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10v-8a1 1 0 011-1h5.086a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V15a1 1 0 01-1 1h-1.05a2.5 2.5 0 01-4.9 0H11v1h1a1 1 0 110 2h-1a1 1 0 110-2h-3z"/></svg>
-                    Stok Kendaraan
+                    Stok
                 </a>
                 @endcan
 

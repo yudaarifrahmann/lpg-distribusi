@@ -33,6 +33,7 @@
             <option value="cash" {{ request('metode_pembayaran') == 'cash' ? 'selected' : '' }}>Cash</option>
             <option value="transfer" {{ request('metode_pembayaran') == 'transfer' ? 'selected' : '' }}>Transfer</option>
             <option value="utang" {{ request('metode_pembayaran') == 'utang' ? 'selected' : '' }}>Utang</option>
+            <option value="split" {{ request('metode_pembayaran') == 'split' ? 'selected' : '' }}>Split (Campuran)</option>
         </select>
         <div class="flex gap-2">
             <button type="submit" class="flex-1 px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition">Filter</button>
@@ -75,19 +76,41 @@
                         <p class="text-sm font-black text-emerald-600">Rp {{ number_format($p->total_penjualan, 0, ',', '.') }}</p>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
-                            {{ $p->metode_pembayaran == 'utang' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
+                        {{-- Metode Badge --}}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                            {{ in_array($p->metode_pembayaran, ['transfer', 'split']) ? 'bg-blue-100 text-blue-700' : ($p->metode_pembayaran == 'utang' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700') }}">
                             {{ $p->metode_pembayaran }}
                         </span>
-                        <p class="text-[10px] mt-1 {{ $p->status_pembayaran == 'lunas' ? 'text-emerald-500' : 'text-amber-500' }} font-bold">
-                            {{ strtoupper($p->status_pembayaran) }}
-                        </p>
+                        {{-- Status Transfer --}}
+                        @if($p->nominal_transfer > 0)
+                        <span class="block mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase
+                            {{ $p->status_transfer === 'verified' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-700' }}">
+                            {{ $p->status_transfer === 'verified' ? '✓ TF Verified' : '⏳ TF Pending' }}
+                        </span>
+                        @endif
+                        {{-- Nominal Breakdown --}}
+                        <div class="mt-1.5 text-[9px] text-gray-400 space-y-0.5">
+                            @if($p->nominal_cash > 0)<div class="text-emerald-500">Cash: Rp {{ number_format($p->nominal_cash, 0, ',', '.') }}</div>@endif
+                            @if($p->nominal_transfer > 0)<div class="text-blue-500">TF: Rp {{ number_format($p->nominal_transfer, 0, ',', '.') }}</div>@endif
+                            @php $piutang = $p->total_penjualan - $p->nominal_cash - $p->nominal_transfer; @endphp
+                            @if($piutang > 0)<div class="text-red-500">Piutang: Rp {{ number_format($piutang, 0, ',', '.') }}</div>@endif
+                        </div>
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center space-x-2">
                             <a href="{{ route('penjualan.show', $p) }}" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition" title="Detail">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
                             </a>
+                            @canany(['edit pengeluaran', 'view stock'])
+                            @if($p->status_transfer === 'pending')
+                            <form action="{{ route('penjualan.verify-transfer', $p) }}" method="POST" onsubmit="return confirm('Verifikasi bahwa transfer sudah masuk?')">
+                                @csrf
+                                <button type="submit" class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Verifikasi Transfer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </button>
+                            </form>
+                            @endif
+                            @endcanany
                             @can('delete penjualan')
                             <form action="{{ route('penjualan.destroy', $p) }}" method="POST" onsubmit="return confirm('Batalkan transaksi ini? Stok kendaraan akan dikembalikan.')">
                                 @csrf @method('DELETE')

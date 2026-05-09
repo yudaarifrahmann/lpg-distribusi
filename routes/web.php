@@ -52,14 +52,15 @@ Route::middleware('auth')->group(function () {
     Route::resource('surat-jalan', SuratJalanController::class)->middleware('can:view surat jalan');
     Route::get('surat-jalan/{suratJalan}/print', [SuratJalanController::class, 'print'])->name('surat-jalan.print')->middleware('can:view surat jalan');
 
-    // Vehicle Stock
-    Route::get('/vehicle-stock', [VehicleStockController::class, 'index'])->name('vehicle-stock.index')->middleware('can:view vehicle stock');
+    // Vehicle Stock (Return Route Only)
+    Route::post('/vehicle-stock/{truck}/return', [VehicleStockController::class, 'returnStock'])->name('vehicle-stock.return');
 
-    // Stock Warehouse
+    // Stock Dashboard (Unified)
     Route::get('/stock', [StockController::class, 'index'])->name('stock.index')->middleware('can:view stock');
 
     // Penjualan
     Route::resource('penjualan', PenjualanController::class)->middleware('can:view penjualan');
+    Route::post('/penjualan/{penjualan}/verify-transfer', [PenjualanController::class, 'verifyTransfer'])->name('penjualan.verify-transfer')->middleware('can:edit pengeluaran');
 
     // Piutang
     Route::resource('piutang', PiutangController::class)->only(['index', 'show'])->middleware('can:view piutang');

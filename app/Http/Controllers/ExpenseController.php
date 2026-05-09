@@ -60,8 +60,7 @@ class ExpenseController extends Controller
      */
     public function create()
     {
-        $categories = ExpenseCategory::all();
-        return view('expense.create', compact('categories'));
+        return view('expense.create');
     }
 
     /**
@@ -74,7 +73,9 @@ class ExpenseController extends Controller
         DB::beginTransaction();
         try {
             $data['user_id'] = Auth::id();
-            $data['status_verifikasi'] = 'pending';
+            $data['status_verifikasi'] = 'disetujui';
+            $data['verified_by'] = Auth::id();
+            $data['verified_at'] = now();
             
             $expense = Expense::create($data);
 
