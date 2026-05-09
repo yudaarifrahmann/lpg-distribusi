@@ -38,6 +38,7 @@
                     <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Sisa Hutang</th>
                     <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Jatuh Tempo</th>
                     <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -79,10 +80,22 @@
                             {{ str_replace('_', ' ', $p->status_piutang) }}
                         </span>
                     </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{{ route('piutang.show', $p) }}" class="px-3 py-2 bg-blue-50 text-blue-700 text-[10px] font-black uppercase rounded-lg hover:bg-blue-100 transition">
+                                Detail
+                            </a>
+                            @if($p->status_piutang != 'lunas')
+                            <a href="{{ route('piutang.show', $p) }}" class="px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition">
+                                Bayar
+                            </a>
+                            @endif
+                        </div>
+                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="px-6 py-16 text-center text-gray-500 italic">Tidak ada data piutang aktif.</td>
+                    <td colspan="7" class="px-6 py-16 text-center text-gray-500 italic">Tidak ada data piutang aktif.</td>
                 </tr>
                 @endforelse
             </tbody>

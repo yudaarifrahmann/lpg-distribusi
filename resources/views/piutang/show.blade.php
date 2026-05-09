@@ -15,7 +15,7 @@
         <div class="flex items-center space-x-3">
             @if($piutang->status_piutang != 'lunas')
             <button @click="$dispatch('open-modal', 'modal-bayar')" class="px-6 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/30 hover:bg-emerald-700 transition duration-200">
-                Input Pembayaran
+                Catat Pembayaran
             </button>
             @endif
         </div>
@@ -95,8 +95,37 @@
         {{-- Right: History --}}
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Riwayat Utang Awal</h3>
+                </div>
+                <div class="p-6">
+                    <div class="rounded-2xl border border-red-100 bg-red-50/40 p-5">
+                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div>
+                                <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Transaksi Utang</p>
+                                <a href="{{ route('penjualan.show', $piutang->penjualan) }}" class="text-sm font-black text-blue-600 hover:underline">
+                                    {{ $piutang->penjualan->nomor_invoice }}
+                                </a>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    {{ $piutang->penjualan->tanggal_penjualan->format('d/m/Y') }} • {{ $piutang->penjualan->jumlah_tabung }} tabung • {{ strtoupper($piutang->penjualan->metode_pembayaran) }}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    {{ $piutang->penjualan->suratJalan->nomor_surat_jalan }} • {{ $piutang->penjualan->suratJalan->truck->nomor_polisi }}
+                                </p>
+                            </div>
+                            <div class="text-left md:text-right">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nominal Utang Awal</p>
+                                <p class="text-2xl font-black text-red-600">Rp {{ number_format($piutang->nominal_piutang) }}</p>
+                                <p class="text-[10px] text-gray-500 mt-1">Data ini tetap tersimpan walaupun cicilan masuk atau sudah lunas.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Riwayat Cicilan</h3>
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Riwayat Pembayaran / Cicilan</h3>
                 </div>
                 <div class="p-0">
                     <table class="w-full divide-y divide-gray-100">
@@ -106,6 +135,7 @@
                                 <th class="px-6 py-3 text-right text-[10px] font-bold text-gray-400 uppercase">Nominal</th>
                                 <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Metode</th>
                                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Input Oleh</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Keterangan</th>
                                 <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Bukti</th>
                             </tr>
                         </thead>
@@ -118,6 +148,7 @@
                                     <span class="text-[10px] font-bold uppercase text-gray-500">{{ $bayar->metode_pembayaran }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-xs text-gray-500">{{ $bayar->user->name }}</td>
+                                <td class="px-6 py-4 text-xs text-gray-500">{{ $bayar->keterangan ?? '-' }}</td>
                                 <td class="px-6 py-4 text-center">
                                     @if($bayar->bukti_pembayaran)
                                     <a href="{{ Storage::url($bayar->bukti_pembayaran) }}" target="_blank" class="text-blue-500 hover:text-blue-700">
@@ -130,7 +161,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada riwayat pembayaran.</td>
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada riwayat pembayaran.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -142,7 +173,17 @@
 </div>
 
 {{-- Modal Pembayaran --}}
-<div x-data="{ open: false }" 
+<div x-data="{ 
+        open: false,
+        nominal: {{ (int) $piutang->sisa_tagihan }},
+        sisa: {{ (int) $piutang->sisa_tagihan }},
+        formatRupiah(amount) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0);
+        },
+        get sisaSetelahBayar() {
+            return Math.max(this.sisa - (Number(this.nominal) || 0), 0);
+        }
+     }" 
      x-show="open" 
      @open-modal.window="if($event.detail === 'modal-bayar') open = true"
      @close-modal.window="open = false"
@@ -169,8 +210,8 @@
 
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal (Rp)</label>
-                    <input type="number" name="nominal_pembayaran" max="{{ $piutang->sisa_tagihan }}" value="{{ $piutang->sisa_tagihan }}" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-lg font-black text-emerald-600 focus:ring-2 focus:ring-emerald-500">
-                    <p class="text-[10px] text-gray-400 mt-1 italic">Sisa tagihan: Rp {{ number_format($piutang->sisa_tagihan) }}</p>
+                    <input type="number" name="nominal_pembayaran" min="1" max="{{ $piutang->sisa_tagihan }}" x-model.number="nominal" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-lg font-black text-emerald-600 focus:ring-2 focus:ring-emerald-500">
+                    <p class="text-[10px] text-gray-400 mt-1 italic">Bisa bayar sebagian atau seluruh sisa tagihan.</p>
                 </div>
 
                 <div>
@@ -179,6 +220,21 @@
                         <option value="cash">Cash</option>
                         <option value="transfer">Transfer</option>
                     </select>
+                </div>
+
+                <div class="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Sisa Sebelum Bayar</span>
+                        <span class="font-bold text-gray-800">Rp {{ number_format($piutang->sisa_tagihan) }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Dibayar Sekarang</span>
+                        <span class="font-bold text-emerald-600" x-text="formatRupiah(nominal)"></span>
+                    </div>
+                    <div class="flex justify-between text-sm pt-2 border-t border-dashed border-gray-200">
+                        <span class="font-bold text-gray-700">Sisa Setelah Bayar</span>
+                        <span class="font-black text-red-600" x-text="formatRupiah(sisaSetelahBayar)"></span>
+                    </div>
                 </div>
 
                 <div>

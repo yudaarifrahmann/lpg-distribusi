@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePembayaranPiutangRequest;
 use App\Models\PembayaranPiutang;
 use App\Models\Piutang;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -19,10 +20,12 @@ class PembayaranPiutangController extends Controller
         try {
             $piutang = Piutang::findOrFail($data['piutang_id']);
             
-            // Check if payment exceeds sisa tagihan
+            if ($piutang->status_piutang === 'lunas' || $piutang->sisa_tagihan <= 0) {
+                throw new \Exception('Piutang ini sudah lunas.');
+            }
+
             if ($data['nominal_pembayaran'] > $piutang->sisa_tagihan) {
-                // We allow overpayment? Usually not.
-                // throw new \Exception('Nominal pembayaran melebihi sisa tagihan (Sisa: ' . number_format($piutang->sisa_tagihan) . ')');
+                throw new \Exception('Nominal pembayaran melebihi sisa tagihan (Sisa: Rp ' . number_format($piutang->sisa_tagihan, 0, ',', '.') . ').');
             }
 
             if ($request->hasFile('bukti_pembayaran')) {
@@ -43,6 +46,40 @@ class PembayaranPiutangController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal mencatat pembayaran: ' . $e->getMessage());
+        }
+    }
+
+    public function pelunasan(Request $request, Piutang $piutang)
+    {
+        $data = $request->validate([
+            'tanggal_pembayaran' => 'nullable|date',
+            'metode_pembayaran' => 'nullable|in:cash,transfer',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $piutang->refresh();
+
+            if ($piutang->status_piutang === 'lunas' || $piutang->sisa_tagihan <= 0) {
+                throw new \Exception('Piutang ini sudah lunas.');
+            }
+
+            PembayaranPiutang::create([
+                'piutang_id' => $piutang->id,
+                'tanggal_pembayaran' => $data['tanggal_pembayaran'] ?? now()->toDateString(),
+                'nominal_pembayaran' => $piutang->sisa_tagihan,
+                'metode_pembayaran' => $data['metode_pembayaran'] ?? 'cash',
+                'keterangan' => 'Pelunasan piutang',
+                'user_id' => Auth::id(),
+            ]);
+
+            $piutang->updateCalculations();
+
+            DB::commit();
+            return back()->with('success', 'Piutang berhasil dilunasi. Riwayat transaksi utang tetap tersimpan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal melunasi piutang: ' . $e->getMessage());
         }
     }
 

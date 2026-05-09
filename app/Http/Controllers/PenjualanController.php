@@ -96,6 +96,7 @@ class PenjualanController extends Controller
         try {
             $sj = SuratJalan::findOrFail($data['surat_jalan_id']);
             $price = LpgPrice::findOrFail($data['lpg_price_id']);
+            $pangkalan = $this->resolvePangkalan($data);
             
             // 1. Check Vehicle Stock
             $vStock = VehicleStock::where('truck_id', $sj->truck_id)->first();
@@ -113,14 +114,14 @@ class PenjualanController extends Controller
                 'surat_jalan_id' => $sj->id,
                 'truck_id' => $sj->truck_id,
                 'driver_id' => $sj->driver_id,
-                'pangkalan_id' => $data['pangkalan_id'],
+                'pangkalan_id' => $pangkalan->id,
                 'lpg_price_id' => $price->id,
                 'jumlah_tabung' => $data['jumlah_tabung'],
                 'harga_satuan' => $price->harga,
                 'total_penjualan' => $total,
                 'metode_pembayaran' => $data['metode_pembayaran'],
                 'status_pembayaran' => $data['metode_pembayaran'] == 'utang' ? 'belum_lunas' : 'lunas',
-                'catatan' => $data['catatan'],
+                'catatan' => $data['catatan'] ?? null,
             ];
 
             // 3. Create Penjualan
@@ -139,14 +140,14 @@ class PenjualanController extends Controller
                 'stok_masuk' => 0,
                 'stok_keluar' => $data['jumlah_tabung'],
                 'stok_akhir' => $newVStock,
-                'keterangan' => 'Penjualan ke Pangkalan: ' . $penjualan->pangkalan->nama_pangkalan,
+                'keterangan' => 'Penjualan ke Pangkalan: ' . $pangkalan->nama_pangkalan,
             ]);
 
             // 6. Create Piutang if debt
             if ($data['metode_pembayaran'] == 'utang') {
                 Piutang::create([
                     'penjualan_id' => $penjualan->id,
-                    'pangkalan_id' => $data['pangkalan_id'],
+                    'pangkalan_id' => $pangkalan->id,
                     'nominal_piutang' => $total,
                     'sisa_tagihan' => $total,
                     'tanggal_jatuh_tempo' => $data['tanggal_jatuh_tempo'],
@@ -163,6 +164,38 @@ class PenjualanController extends Controller
             DB::rollBack();
             return back()->with('error', $e->getMessage())->withInput();
         }
+    }
+
+    private function resolvePangkalan(array $data): Pangkalan
+    {
+        if (!empty($data['pangkalan_id'])) {
+            return Pangkalan::findOrFail($data['pangkalan_id']);
+        }
+
+        $namaPangkalan = trim($data['pangkalan_nama']);
+        $pangkalan = Pangkalan::withTrashed()
+            ->where('nama_pangkalan', $namaPangkalan)
+            ->first();
+
+        if ($pangkalan) {
+            if ($pangkalan->trashed()) {
+                $pangkalan->restore();
+            }
+
+            if ($pangkalan->status !== 'aktif') {
+                $pangkalan->update(['status' => 'aktif']);
+            }
+
+            return $pangkalan;
+        }
+
+        return Pangkalan::create([
+            'nama_pangkalan' => $namaPangkalan,
+            'nama_pemilik' => $namaPangkalan,
+            'alamat' => '-',
+            'no_hp' => '-',
+            'status' => 'aktif',
+        ]);
     }
 
     /**

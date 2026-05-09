@@ -57,14 +57,14 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pangkalan / Pembeli <span class="text-red-500">*</span></label>
-                            <input list="pangkalan_list" id="pangkalan_input" placeholder="Ketik nama pangkalan..." class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition" 
-                                   onchange="updatePangkalanId(this.value)">
+                            <input type="text" list="pangkalan_list" name="pangkalan_nama" id="pangkalan_input" value="{{ old('pangkalan_nama') }}" placeholder="Ketik nama pangkalan..." required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition" 
+                                   oninput="updatePangkalanId(this.value)">
                             <datalist id="pangkalan_list">
                                 @foreach($pangkalans as $p)
                                     <option value="{{ $p->nama_pangkalan }}" data-id="{{ $p->id }}"></option>
                                 @endforeach
                             </datalist>
-                            <input type="hidden" name="pangkalan_id" id="pangkalan_id" value="{{ old('pangkalan_id') }}" required>
+                            <input type="hidden" name="pangkalan_id" id="pangkalan_id" value="{{ old('pangkalan_id') }}">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -183,11 +183,20 @@
     // Auto-fill on load if old value exists
     window.onload = function() {
         const oldId = "{{ old('pangkalan_id') }}";
+        const oldName = @json(old('pangkalan_nama'));
+
+        if (oldName) {
+            document.getElementById('pangkalan_input').value = oldName;
+            updatePangkalanId(oldName);
+            return;
+        }
+
         if (oldId) {
             const options = document.getElementById('pangkalan_list').options;
             for (let i = 0; i < options.length; i++) {
                 if (options[i].getAttribute('data-id') == oldId) {
                     document.getElementById('pangkalan_input').value = options[i].value;
+                    updatePangkalanId(options[i].value);
                     break;
                 }
             }

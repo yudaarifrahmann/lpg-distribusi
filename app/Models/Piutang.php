@@ -66,6 +66,7 @@ class Piutang extends Model
             $this->penjualan->update(['status_pembayaran' => 'cicilan']);
         } else {
             $this->status_piutang = 'belum_bayar';
+            $this->penjualan->update(['status_pembayaran' => 'belum_lunas']);
         }
 
         $this->save();

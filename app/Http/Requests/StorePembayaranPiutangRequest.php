@@ -11,7 +11,7 @@ class StorePembayaranPiutangRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('create piutang'); // or dedicated permission
+        return $this->user()->can('view piutang');
     }
 
     /**
