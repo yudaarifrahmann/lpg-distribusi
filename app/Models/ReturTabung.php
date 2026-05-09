@@ -13,6 +13,7 @@ class ReturTabung extends Model
     protected $fillable = [
         'tanggal_retur',
         'surat_jalan_id',
+        'penjualan_id',
         'truck_id',
         'driver_id',
         'jumlah_retur',
@@ -46,5 +47,10 @@ class ReturTabung extends Model
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function penjualan(): BelongsTo
+    {
+        return $this->belongsTo(Penjualan::class);
     }
 }

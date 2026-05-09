@@ -80,6 +80,13 @@
                                 <a href="{{ route('penebusan.create', ['sa_id' => $sa->id]) }}" class="inline-flex items-center px-2.5 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition">
                                     Tebus DO
                                 </a>
+                                <form action="{{ route('schedule-agreement.destroy', $sa) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan Schedule Agreement ini?')" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition" title="Batal SA">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
                             @endif
                         </div>
                     </td>

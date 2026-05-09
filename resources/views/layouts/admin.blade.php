@@ -109,23 +109,25 @@
                     <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gudang & Stok</p>
                 </div>
 
-                @can('view stock')
+                @if(auth()->user()->can('view stock') || auth()->user()->hasRole('supir_knek'))
                 <a href="{{ route('stock.index') }}" class="sidebar-link {{ request()->routeIs('stock.index') ? 'active' : '' }}">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 9a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM5 13a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
-                    Stok
+                    {{ auth()->user()->hasRole('supir_knek') ? 'Stok Kendaraan' : 'Stok' }}
                 </a>
-                @endcan
+                @endif
 
-                @can('view stock')
+                @if(auth()->user()->can('view stock') || auth()->user()->hasRole('supir_knek'))
                 <a href="{{ route('retur.index') }}" class="sidebar-link {{ request()->routeIs('retur.*') ? 'active' : '' }}">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11 15l-3-3m0 0l3-3m-3 3h8m-13 5h18a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" clip-rule="evenodd"/></svg>
                     Retur Tabung
                 </a>
+                @if(!auth()->user()->hasRole('supir_knek'))
                 <a href="{{ route('stock-history.index') }}" class="sidebar-link {{ request()->routeIs('stock-history.*') ? 'active' : '' }}">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/></svg>
                     Mutasi Stok
                 </a>
-                @endcan
+                @endif
+                @endif
 
                 @role('superadmin')
                 <a href="{{ route('stock-adjustment.index') }}" class="sidebar-link {{ request()->routeIs('stock-adjustment.*') ? 'active' : '' }}">

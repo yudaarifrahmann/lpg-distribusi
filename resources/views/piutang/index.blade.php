@@ -82,8 +82,17 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-2">
-                            <a href="{{ route('piutang.show', $p) }}" class="px-3 py-2 bg-blue-50 text-blue-700 text-[10px] font-black uppercase rounded-lg hover:bg-blue-100 transition">
+                            <a href="{{ route('piutang.show', $p) }}" class="relative px-3 py-2 bg-blue-50 text-blue-700 text-[10px] font-black uppercase rounded-lg hover:bg-blue-100 transition">
                                 Detail
+                                @hasanyrole('superadmin|admin_keuangan')
+                                    @php $totalP = $p->pending_count + ($p->initial_pending ?? 0); @endphp
+                                    @if($totalP > 0)
+                                        <span class="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-white text-[8px] font-bold items-center justify-center">{{ $totalP }}</span>
+                                        </span>
+                                    @endif
+                                @endhasanyrole
                             </a>
                             @if($p->status_piutang != 'lunas')
                             <a href="{{ route('piutang.show', $p) }}" class="px-3 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-700 transition">

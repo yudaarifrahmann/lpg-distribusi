@@ -21,10 +21,22 @@ class SuratJalan extends Model
         'status_perjalanan',
         'catatan',
         'foto_surat_jalan',
+        'muat_dari_gudang',
+        'is_supir_tembak',
+        'nama_supir_tembak',
+        'alamat_supir_tembak',
+        'no_hp_supir_tembak',
+        'is_knek_tembak',
+        'nama_knek_tembak',
+        'alamat_knek_tembak',
+        'no_hp_knek_tembak',
     ];
 
     protected $casts = [
         'tanggal_berangkat' => 'date',
+        'muat_dari_gudang' => 'boolean',
+        'is_supir_tembak' => 'boolean',
+        'is_knek_tembak' => 'boolean',
     ];
 
     public function penebusan(): BelongsTo

@@ -48,7 +48,7 @@
         </tr>
         <tr>
             <td>No. DO</td>
-            <td>: #{{ $suratJalan->penebusan->nomor_do }}</td>
+            <td>: {{ $suratJalan->penebusan ? '#'.$suratJalan->penebusan->nomor_do : '(Muat Gudang)' }}</td>
             <td>Knek</td>
             <td>: {{ $suratJalan->knek->nama ?? '-' }}</td>
         </tr>

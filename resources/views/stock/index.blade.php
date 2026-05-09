@@ -137,16 +137,34 @@
         {{-- TAB 2: Kendaraan --}}
         <div x-show="tab === 'kendaraan'" x-transition.opacity.duration.300ms style="display: none;">
             <div class="px-8 py-4 border-b border-gray-50 flex items-center justify-between">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Filter Kendaraan</p>
-                <form method="GET" class="flex gap-2">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Filter Riwayat</p>
+                <form method="GET" class="flex flex-wrap gap-2">
                     <input type="hidden" name="tab" value="kendaraan">
+                    
+                    {{-- Filter Truk --}}
                     <select name="truck_id" class="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 transition">
                         <option value="">Semua Truk</option>
                         @foreach($trucks as $t)
                             <option value="{{ $t->id }}" {{ request('truck_id') == $t->id ? 'selected' : '' }}>{{ $t->nomor_polisi }}</option>
                         @endforeach
                     </select>
-                    <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-xl hover:bg-gray-700 transition">Filter</button>
+
+                    {{-- Filter Supir --}}
+                    <select name="driver_id" class="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 transition">
+                        <option value="">Semua Supir</option>
+                        @foreach($drivers as $d)
+                            <option value="{{ $d->id }}" {{ request('driver_id') == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
+                        @endforeach
+                    </select>
+
+                    <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-xl hover:bg-gray-700 transition flex items-center gap-2">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        Filter
+                    </button>
+                    
+                    @if(request('truck_id') || request('driver_id'))
+                    <a href="{{ route('stock.index', ['tab' => 'kendaraan']) }}" class="px-4 py-2 bg-gray-100 text-gray-500 text-xs font-bold rounded-xl hover:bg-gray-200 transition">Reset</a>
+                    @endif
                 </form>
             </div>
             <div class="overflow-x-auto">
@@ -187,7 +205,7 @@
             </div>
             @if($vehicleHistories->hasPages())
             <div class="px-8 py-6 border-t border-gray-50">
-                {{ $vehicleHistories->appends(['tab' => 'kendaraan', 'gudang_page' => request('gudang_page'), 'truck_id' => request('truck_id')])->links() }}
+                {{ $vehicleHistories->appends(['tab' => 'kendaraan', 'gudang_page' => request('gudang_page'), 'truck_id' => request('truck_id'), 'driver_id' => request('driver_id')])->links() }}
             </div>
             @endif
         </div>

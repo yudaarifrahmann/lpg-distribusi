@@ -6,10 +6,20 @@
 <div class="max-w-6xl mx-auto" x-data="{ 
     jumlah: {{ old('jumlah_tabung', 0) }}, 
     harga: 0,
+    currentStok: 0,
     nominalCash: {{ old('nominal_cash', 0) }},
     nominalTransfer: {{ old('nominal_transfer', 0) }},
+    multi: false,
+    metode: ['cash'],
+    rekeningPopup: false,
+    rekeningDetail: {
+        bank: 'BCA',
+        norek: '1234567890',
+        nama: 'PT LPG DISTRIBUSI'
+    },
     updateHarga() {
         const select = document.getElementById('lpg_price_id');
+        if (!select) return;
         const selectedOption = select.options[select.selectedIndex];
         this.harga = selectedOption.dataset.price || 0;
     },
@@ -19,10 +29,61 @@
     get sisaUtang() {
         return Math.max(0, this.total - this.nominalCash - this.nominalTransfer);
     },
+    handleSJChange(el) {
+        if (!el) return;
+        let selected = el.options[el.selectedIndex];
+        this.currentStok = (selected.value && selected.dataset.stok) ? selected.dataset.stok : 0;
+    },
+    toggleMetode(val) {
+        if (!this.multi) {
+            this.metode = [val];
+        } else {
+            if (this.metode.includes(val)) {
+                this.metode = this.metode.filter(m => m !== val);
+                if (val === 'cash') this.nominalCash = 0;
+                if (val === 'transfer') this.nominalTransfer = 0;
+            } else {
+                this.metode.push(val);
+            }
+        }
+        this.autoFillSinglePayment();
+    },
+    toggleMulti() {
+        if (!this.multi) {
+            if (this.metode.length > 1) {
+                this.metode = [this.metode[0]];
+            } else if (this.metode.length === 0) {
+                this.metode = ['cash'];
+            }
+        }
+        this.autoFillSinglePayment();
+    },
+    autoFillSinglePayment() {
+        if (!this.multi && this.metode.length === 1) {
+            if (this.metode[0] === 'cash') {
+                this.nominalCash = this.total;
+                this.nominalTransfer = 0;
+            } else if (this.metode[0] === 'transfer') {
+                this.nominalTransfer = this.total;
+                this.nominalCash = 0;
+            } else if (this.metode[0] === 'utang') {
+                this.nominalCash = 0;
+                this.nominalTransfer = 0;
+            }
+        }
+    },
     formatRupiah(amount) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     }
-}" x-init="updateHarga()">
+}" x-init="
+    updateHarga();
+    $nextTick(() => {
+        let sjSelect = document.getElementById('surat_jalan_id');
+        if (sjSelect && sjSelect.value) {
+            handleSJChange(sjSelect);
+        }
+    });
+">
     
     <div class="mb-6">
         <a href="{{ route('penjualan.index') }}" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition">
@@ -31,54 +92,7 @@
         </a>
     </div>
 
-    <form action="{{ route('penjualan.store') }}" method="POST" class="space-y-6" x-data="{
-        multi: false,
-        metode: ['cash'],
-        rekeningPopup: false,
-        rekeningDetail: {
-            bank: 'BCA',
-            norek: '1234567890',
-            nama: 'PT LPG DISTRIBUSI'
-        },
-        toggleMetode(val) {
-            if (!this.multi) {
-                this.metode = [val];
-            } else {
-                if (this.metode.includes(val)) {
-                    this.metode = this.metode.filter(m => m !== val);
-                    if (val === 'cash') this.nominalCash = 0;
-                    if (val === 'transfer') this.nominalTransfer = 0;
-                } else {
-                    this.metode.push(val);
-                }
-            }
-            this.autoFillSinglePayment();
-        },
-        toggleMulti() {
-            if (!this.multi) {
-                if (this.metode.length > 1) {
-                    this.metode = [this.metode[0]];
-                } else if (this.metode.length === 0) {
-                    this.metode = ['cash'];
-                }
-            }
-            this.autoFillSinglePayment();
-        },
-        autoFillSinglePayment() {
-            if (!this.multi && this.metode.length === 1) {
-                if (this.metode[0] === 'cash') {
-                    this.nominalCash = this.total;
-                    this.nominalTransfer = 0;
-                } else if (this.metode[0] === 'transfer') {
-                    this.nominalTransfer = this.total;
-                    this.nominalCash = 0;
-                } else if (this.metode[0] === 'utang') {
-                    this.nominalCash = 0;
-                    this.nominalTransfer = 0;
-                }
-            }
-        }
-    }" x-effect="autoFillSinglePayment()">
+    <form action="{{ route('penjualan.store') }}" method="POST" class="space-y-6" @submit="nominalCash = nominalCash || 0; nominalTransfer = nominalTransfer || 0">
         @csrf
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {{-- Left Column: Form Fields --}}
@@ -95,10 +109,12 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Surat Jalan (SJ Aktif) <span class="text-red-500">*</span></label>
-                                <select name="surat_jalan_id" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                                <select name="surat_jalan_id" id="surat_jalan_id" required @change="handleSJChange($event.target)" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
                                     <option value="">-- Pilih SJ --</option>
                                     @foreach($suratJalans as $sj)
-                                        <option value="{{ $sj->id }}" {{ old('surat_jalan_id') == $sj->id ? 'selected' : '' }}>
+                                        <option value="{{ $sj->id }}" 
+                                                data-stok="{{ $sj->truck->vehicleStock->stok_saat_ini ?? 0 }}"
+                                                {{ (old('surat_jalan_id') == $sj->id || count($suratJalans) === 1) ? 'selected' : '' }}>
                                             {{ $sj->nomor_surat_jalan }} ({{ $sj->truck->nomor_polisi }})
                                         </option>
                                     @endforeach
@@ -133,10 +149,41 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Tabung (Pcs) <span class="text-red-500">*</span></label>
                                 <input type="number" name="jumlah_tabung" x-model="jumlah" required min="1" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-indigo-600 focus:ring-2 focus:ring-emerald-500 transition">
+                                <template x-if="currentStok > 0">
+                                    <p class="text-[10px] text-gray-400 mt-1">Sisa di Mobil: <span class="font-bold text-emerald-600" x-text="currentStok"></span> Pcs</p>
+                                </template>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {{-- Retur Tabung Section --}}
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 bg-amber-50 border-b border-amber-100 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-bold text-amber-800 uppercase tracking-widest">Retur Tabung (Opsional)</h3>
+                            <p class="text-[10px] text-amber-600 font-medium">Isi jika ada tabung bocor/rusak saat pengantaran</p>
+                        </div>
+                        <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Retur</label>
+                                <input type="number" name="jumlah_retur" value="{{ old('jumlah_retur', 0) }}" min="0" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kondisi Tabung</label>
+                                <select name="kondisi_tabung" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition">
+                                    <option value="">-- Pilih Kondisi --</option>
+                                    <option value="bocor" {{ old('kondisi_tabung') == 'bocor' ? 'selected' : '' }}>Bocor</option>
+                                    <option value="rusak" {{ old('kondisi_tabung') == 'rusak' ? 'selected' : '' }}>Rusak / Fisik Cacat</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">

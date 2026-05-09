@@ -56,11 +56,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/vehicle-stock/{truck}/return', [VehicleStockController::class, 'returnStock'])->name('vehicle-stock.return');
 
     // Stock Dashboard (Unified)
-    Route::get('/stock', [StockController::class, 'index'])->name('stock.index')->middleware('can:view stock');
+    Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
 
     // Penjualan
+    Route::get('penjualan/print-rekap', [PenjualanController::class, 'printRekap'])->name('penjualan.print-rekap')->middleware('can:view penjualan');
     Route::resource('penjualan', PenjualanController::class)->middleware('can:view penjualan');
-    Route::post('/penjualan/{penjualan}/verify-transfer', [PenjualanController::class, 'verifyTransfer'])->name('penjualan.verify-transfer')->middleware('can:edit pengeluaran');
+    Route::get('penjualan/{penjualan}/print', [PenjualanController::class, 'print'])->name('penjualan.print')->middleware('can:view penjualan');
+    Route::post('/penjualan/{penjualan}/verify-transfer', [PenjualanController::class, 'verifyTransfer'])->name('penjualan.verify-transfer')->middleware('role:superadmin|admin_keuangan');
 
     // Piutang
     Route::resource('piutang', PiutangController::class)->only(['index', 'show'])->middleware('can:view piutang');
@@ -68,7 +70,7 @@ Route::middleware('auth')->group(function () {
     // Pembayaran Piutang
     Route::post('/pembayaran-piutang', [PembayaranPiutangController::class, 'store'])->name('pembayaran-piutang.store')->middleware('can:view piutang');
     Route::post('/piutang/{piutang}/pelunasan', [PembayaranPiutangController::class, 'pelunasan'])->name('piutang.pelunasan')->middleware('can:view piutang');
-    Route::post('/pembayaran-piutang/{pembayaran}/verify', [PembayaranPiutangController::class, 'verify'])->name('pembayaran-piutang.verify')->middleware('can:create piutang');
+    Route::post('/pembayaran-piutang/{pembayaran}/verify', [PembayaranPiutangController::class, 'verify'])->name('pembayaran-piutang.verify')->middleware('role:superadmin|admin_keuangan');
     Route::delete('/pembayaran-piutang/{pembayaran}', [PembayaranPiutangController::class, 'destroy'])->name('pembayaran-piutang.destroy')->middleware('can:delete piutang');
 
     // Pengeluaran
@@ -76,7 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/expense/{expense}/verify', [ExpenseController::class, 'verify'])->name('expense.verify')->middleware('can:edit pengeluaran');
 
     // Retur Tabung
-    Route::resource('retur', ReturTabungController::class)->middleware('can:view stock');
+    Route::resource('retur', ReturTabungController::class);
     Route::post('/retur/{retur}/approve', [ReturTabungController::class, 'approve'])->name('retur.approve')->middleware('can:edit stock');
 
     // Stock Adjustment & History

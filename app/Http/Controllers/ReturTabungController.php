@@ -18,6 +18,10 @@ class ReturTabungController extends Controller
      */
     public function index(Request $request)
     {
+        if (!Auth::user()->can('view stock') && !Auth::user()->hasRole('supir_knek')) {
+            abort(403);
+        }
+
         $query = ReturTabung::with(['suratJalan', 'truck', 'supir', 'verifier']);
 
         if (Auth::user()->hasRole('supir_knek')) {
@@ -34,6 +38,10 @@ class ReturTabungController extends Controller
      */
     public function create()
     {
+        if (!Auth::user()->can('view stock') && !Auth::user()->hasRole('supir_knek')) {
+            abort(403);
+        }
+
         $querySj = SuratJalan::with(['truck', 'supir'])->where('status_perjalanan', '!=', 'selesai');
         
         if (Auth::user()->hasRole('supir_knek')) {

@@ -58,12 +58,16 @@ class SuratJalanController extends Controller
      */
     public function create()
     {
-        $penebusans = Penebusan::where('status_penebusan', 'berhasil')->latest()->get();
+        $penebusans = Penebusan::where('status_penebusan', 'berhasil')
+            ->whereDoesntHave('suratJalan')
+            ->latest()
+            ->get();
         $trucks = Truck::where('status_kendaraan', 'aktif')->get();
         $supirs = Driver::where('role_pekerjaan', 'supir')->where('status', 'aktif')->get();
         $kneks = Driver::where('role_pekerjaan', 'knek')->where('status', 'aktif')->get();
+        $stokGudang = \App\Models\StockSummary::first()?->stok_saat_ini ?? 0;
 
-        return view('surat-jalan.create', compact('penebusans', 'trucks', 'supirs', 'kneks'));
+        return view('surat-jalan.create', compact('penebusans', 'trucks', 'supirs', 'kneks', 'stokGudang'));
     }
 
     /**
@@ -75,10 +79,20 @@ class SuratJalanController extends Controller
         
         DB::beginTransaction();
         try {
-            // 1. Check Warehouse Stock
-            $summary = StockSummary::first();
-            if (!$summary || $summary->stok_saat_ini < $data['jumlah_tabung']) {
-                throw new \Exception('Stok gudang tidak mencukupi. Stok saat ini: ' . ($summary ? $summary->stok_saat_ini : 0));
+            // 1. Handle Supir & Knek Tembak
+            if ($data['driver_id'] === 'tembak') {
+                $data['driver_id'] = null;
+                $data['is_supir_tembak'] = true;
+            }
+            if ($data['knek_id'] === 'tembak') {
+                $data['knek_id'] = null;
+                $data['is_knek_tembak'] = true;
+            }
+
+            // 2. If DO is selected, we keep the muat_dari_gudang as false by default
+            if ($request->filled('penebusan_id')) {
+                $penebusan = Penebusan::findOrFail($request->penebusan_id);
+                $data['muat_dari_gudang'] = false; 
             }
 
             // 2. Upload photo if exists
@@ -87,48 +101,58 @@ class SuratJalanController extends Controller
             }
 
             // 3. Create SJ
-            $data['status_perjalanan'] = 'persiapan';
+            $data['status_perjalanan'] = $request->action === 'berangkat' ? 'berangkat' : 'persiapan';
             $sj = SuratJalan::create($data);
 
-            // 4. Decrease Warehouse Stock
-            $oldWarehouseStock = $summary->stok_saat_ini;
-            $newWarehouseStock = $oldWarehouseStock - $data['jumlah_tabung'];
-            $summary->update(['stok_saat_ini' => $newWarehouseStock]);
+            // 4. Handle Stock Movement ONLY if "Muat dari Gudang" is checked AND NO DO is selected
+            if ($sj->muat_dari_gudang && !$sj->penebusan_id) {
+                // Check Warehouse Stock
+                $summary = StockSummary::first();
+                if (!$summary || $summary->stok_saat_ini < $sj->jumlah_tabung) {
+                    throw new \Exception('Stok gudang tidak mencukupi untuk memuat barang. Stok saat ini: ' . ($summary ? $summary->stok_saat_ini : 0));
+                }
 
-            // 5. Create Warehouse History
-            StockHistory::create([
-                'tanggal' => $sj->tanggal_berangkat,
-                'jenis_transaksi' => 'surat_jalan',
-                'referensi' => $sj->nomor_surat_jalan,
-                'stok_masuk' => 0,
-                'stok_keluar' => $data['jumlah_tabung'],
-                'stok_akhir' => $newWarehouseStock,
-                'keterangan' => 'Pengiriman via SJ #' . $sj->nomor_surat_jalan,
-            ]);
+                // Decrease Warehouse Stock
+                $oldWarehouseStock = $summary->stok_saat_ini;
+                $newWarehouseStock = $oldWarehouseStock - $sj->jumlah_tabung;
+                $summary->update(['stok_saat_ini' => $newWarehouseStock]);
 
-            // 6. Increase Vehicle Stock
-            $vStock = VehicleStock::firstOrCreate(
-                ['truck_id' => $data['truck_id']],
-                ['stok_saat_ini' => 0]
-            );
-            $oldVStock = $vStock->stok_saat_ini;
-            $newVStock = $oldVStock + $data['jumlah_tabung'];
-            $vStock->update(['stok_saat_ini' => $newVStock]);
+                // Create Warehouse History
+                StockHistory::create([
+                    'tanggal' => $sj->tanggal_berangkat,
+                    'jenis_transaksi' => 'surat_jalan',
+                    'referensi' => $sj->nomor_surat_jalan,
+                    'stok_masuk' => 0,
+                    'stok_keluar' => $sj->jumlah_tabung,
+                    'stok_akhir' => $newWarehouseStock,
+                    'keterangan' => 'Muat dari Gudang ke Truk (SJ #' . $sj->nomor_surat_jalan . ')',
+                ]);
 
-            // 7. Create Vehicle History
-            VehicleStockHistory::create([
-                'tanggal' => $sj->tanggal_berangkat,
-                'truck_id' => $data['truck_id'],
-                'jenis_mutasi' => 'distribusi_ke_truk',
-                'referensi' => $sj->nomor_surat_jalan,
-                'stok_masuk' => $data['jumlah_tabung'],
-                'stok_keluar' => 0,
-                'stok_akhir' => $newVStock,
-                'keterangan' => 'Penerimaan stok dari gudang (SJ #' . $sj->nomor_surat_jalan . ')',
-            ]);
+                // Increase Vehicle Stock
+                $vStock = VehicleStock::firstOrCreate(
+                    ['truck_id' => $sj->truck_id],
+                    ['stok_saat_ini' => 0]
+                );
+                $oldVStock = $vStock->stok_saat_ini;
+                $newVStock = $oldVStock + $sj->jumlah_tabung;
+                $vStock->update(['stok_saat_ini' => $newVStock]);
 
+                // Create Vehicle History
+                VehicleStockHistory::create([
+                    'tanggal' => $sj->tanggal_berangkat,
+                    'truck_id' => $sj->truck_id,
+                    'jenis_mutasi' => 'distribusi_ke_truk',
+                    'referensi' => $sj->nomor_surat_jalan,
+                    'stok_masuk' => $sj->jumlah_tabung,
+                    'stok_keluar' => 0,
+                    'stok_akhir' => $newVStock,
+                    'keterangan' => 'Muat barang dari gudang (SJ #' . $sj->nomor_surat_jalan . ')',
+                ]);
+            }
+            
             DB::commit();
-            return redirect()->route('surat-jalan.index')->with('success', 'Surat Jalan berhasil dibuat dan stok telah didistribusikan ke truk.');
+            $msg = $sj->status_perjalanan === 'berangkat' ? 'Surat Jalan berhasil diterbitkan dan truk telah berangkat.' : 'Surat Jalan disimpan dalam tahap persiapan.';
+            return redirect()->route('surat-jalan.index')->with('success', $msg . ($sj->muat_dari_gudang ? ' Barang dimuat dari gudang.' : ''));
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -188,36 +212,40 @@ class SuratJalanController extends Controller
 
         DB::beginTransaction();
         try {
-            // Rollback stock
-            $summary = StockSummary::first();
-            $newWarehouseStock = $summary->stok_saat_ini + $suratJalan->jumlah_tabung;
-            $summary->update(['stok_saat_ini' => $newWarehouseStock]);
+            // Rollback stock if loaded from warehouse
+            if ($suratJalan->muat_dari_gudang) {
+                $summary = StockSummary::first();
+                $newWarehouseStock = $summary->stok_saat_ini + $suratJalan->jumlah_tabung;
+                $summary->update(['stok_saat_ini' => $newWarehouseStock]);
 
-            StockHistory::create([
-                'tanggal' => now(),
-                'jenis_transaksi' => 'surat_jalan',
-                'referensi' => 'BATAL-' . $suratJalan->nomor_surat_jalan,
-                'stok_masuk' => $suratJalan->jumlah_tabung,
-                'stok_keluar' => 0,
-                'stok_akhir' => $newWarehouseStock,
-                'keterangan' => 'Pembatalan SJ #' . $suratJalan->nomor_surat_jalan,
-            ]);
+                StockHistory::create([
+                    'tanggal' => now(),
+                    'jenis_transaksi' => 'surat_jalan',
+                    'referensi' => 'BATAL-' . $suratJalan->nomor_surat_jalan,
+                    'stok_masuk' => $suratJalan->jumlah_tabung,
+                    'stok_keluar' => 0,
+                    'stok_akhir' => $newWarehouseStock,
+                    'keterangan' => 'Pembatalan SJ (Kembali ke Gudang) #' . $suratJalan->nomor_surat_jalan,
+                ]);
 
-            $vStock = VehicleStock::where('truck_id', $suratJalan->truck_id)->first();
-            $newVStock = $vStock->stok_saat_ini - $suratJalan->jumlah_tabung;
-            $vStock->update(['stok_saat_ini' => $newVStock]);
+                $vStock = VehicleStock::where('truck_id', $suratJalan->truck_id)->first();
+                if ($vStock) {
+                    $newVStock = $vStock->stok_saat_ini - $suratJalan->jumlah_tabung;
+                    $vStock->update(['stok_saat_ini' => $newVStock]);
 
-            VehicleStockHistory::create([
-                'tanggal' => now(),
-                'truck_id' => $suratJalan->truck_id,
-                'jenis_mutasi' => 'retur_gudang',
-                'referensi' => 'BATAL-' . $suratJalan->nomor_surat_jalan,
-                'stok_masuk' => 0,
-                'stok_keluar' => $suratJalan->jumlah_tabung,
-                'stok_akhir' => $newVStock,
-                'keterangan' => 'Pembatalan SJ (Stok kembali ke gudang)',
-            ]);
-
+                    VehicleStockHistory::create([
+                        'tanggal' => now(),
+                        'truck_id' => $suratJalan->truck_id,
+                        'jenis_mutasi' => 'retur_gudang',
+                        'referensi' => 'BATAL-' . $suratJalan->nomor_surat_jalan,
+                        'stok_masuk' => 0,
+                        'stok_keluar' => $suratJalan->jumlah_tabung,
+                        'stok_akhir' => $newVStock,
+                        'keterangan' => 'Pembatalan SJ (Stok kembali ke gudang)',
+                    ]);
+                }
+            }
+            
             if ($suratJalan->foto_surat_jalan) {
                 Storage::disk('public')->delete($suratJalan->foto_surat_jalan);
             }
@@ -225,7 +253,7 @@ class SuratJalanController extends Controller
             $suratJalan->delete();
             DB::commit();
 
-            return redirect()->route('surat-jalan.index')->with('success', 'Surat Jalan dibatalkan dan stok telah dikembalikan ke gudang.');
+            return redirect()->route('surat-jalan.index')->with('success', 'Surat Jalan dibatalkan' . ($suratJalan->muat_dari_gudang ? ' dan stok dikembalikan ke gudang.' : '.'));
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal membatalkan SJ: ' . $e->getMessage());

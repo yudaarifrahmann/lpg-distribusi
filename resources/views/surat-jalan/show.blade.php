@@ -55,8 +55,13 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 font-bold uppercase tracking-tighter mb-1">Referensi DO</p>
-                            <p class="text-gray-800 font-semibold">#{{ $suratJalan->penebusan->nomor_do }}</p>
-                            <p class="text-[10px] text-gray-400">Tebus: {{ $suratJalan->penebusan->tanggal_penebusan->format('d/m/y') }}</p>
+                            @if($suratJalan->penebusan)
+                                <p class="text-gray-800 font-semibold">#{{ $suratJalan->penebusan->nomor_do }}</p>
+                                <p class="text-[10px] text-gray-400">Tebus: {{ $suratJalan->penebusan->tanggal_penebusan->format('d/m/y') }}</p>
+                            @else
+                                <p class="text-indigo-600 font-bold text-sm">MUAT GUDANG</p>
+                                <p class="text-[10px] text-gray-400 italic">Stok diambil dari gudang utama</p>
+                            @endif
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 font-bold uppercase tracking-tighter mb-1">Catatan</p>
@@ -88,13 +93,26 @@
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="p-4 bg-gray-50 rounded-2xl">
+                        <div class="p-4 bg-gray-50 rounded-2xl col-span-2 md:col-span-1">
                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Supir Utama</p>
-                            <p class="text-sm font-bold text-gray-800">{{ $suratJalan->supir->nama }}</p>
+                            @if($suratJalan->is_supir_tembak)
+                                <p class="text-sm font-bold text-amber-700">{{ $suratJalan->nama_supir_tembak }} <span class="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded ml-1 uppercase">Tembak</span></p>
+                                <p class="text-xs text-gray-500 mt-1"><span class="font-semibold">HP:</span> {{ $suratJalan->no_hp_supir_tembak }}</p>
+                                @if($suratJalan->alamat_supir_tembak)
+                                    <p class="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{{ $suratJalan->alamat_supir_tembak }}</p>
+                                @endif
+                            @else
+                                <p class="text-sm font-bold text-gray-800">{{ $suratJalan->supir->nama ?? '-' }}</p>
+                            @endif
                         </div>
-                        <div class="p-4 bg-gray-50 rounded-2xl">
+                        <div class="p-4 bg-gray-50 rounded-2xl col-span-2 md:col-span-1">
                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Knek Pendamping</p>
-                            <p class="text-sm font-bold text-gray-800">{{ $suratJalan->knek->nama ?? 'Tidak Ada' }}</p>
+                            @if($suratJalan->is_knek_tembak)
+                                <p class="text-sm font-bold text-amber-700">{{ $suratJalan->nama_knek_tembak }} <span class="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded ml-1 uppercase">Tembak</span></p>
+                                <p class="text-xs text-gray-500 mt-1"><span class="font-semibold">HP:</span> {{ $suratJalan->no_hp_knek_tembak }}</p>
+                            @else
+                                <p class="text-sm font-bold text-gray-800">{{ $suratJalan->knek->nama ?? 'Tidak Ada' }}</p>
+                            @endif
                         </div>
                     </div>
                 </div>

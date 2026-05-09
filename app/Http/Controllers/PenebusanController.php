@@ -79,21 +79,24 @@ class PenebusanController extends Controller
 
             $penebusan = Penebusan::create($data);
 
-            // Update Stock
-            $summary = StockSummary::first();
-            $oldStock = $summary->stok_saat_ini;
-            $newStock = $oldStock + $penebusan->jumlah_tabung;
-            
-            $summary->update(['stok_saat_ini' => $newStock]);
+            // Update Vehicle Stock
+            $vStock = \App\Models\VehicleStock::firstOrCreate(
+                ['truck_id' => $penebusan->truck_id],
+                ['stok_saat_ini' => 0]
+            );
+            $oldVStock = $vStock->stok_saat_ini;
+            $newVStock = $oldVStock + $penebusan->jumlah_tabung;
+            $vStock->update(['stok_saat_ini' => $newVStock]);
 
-            // Create History
-            StockHistory::create([
+            // Create Vehicle History
+            \App\Models\VehicleStockHistory::create([
                 'tanggal' => $penebusan->tanggal_penebusan,
-                'jenis_transaksi' => 'penebusan',
+                'truck_id' => $penebusan->truck_id,
+                'jenis_mutasi' => 'penebusan',
                 'referensi' => $penebusan->nomor_do,
                 'stok_masuk' => $penebusan->jumlah_tabung,
                 'stok_keluar' => 0,
-                'stok_akhir' => $newStock,
+                'stok_akhir' => $newVStock,
                 'keterangan' => 'Penebusan DO #' . $penebusan->nomor_do,
             ]);
 
@@ -138,22 +141,23 @@ class PenebusanController extends Controller
         
         DB::beginTransaction();
         try {
-            $summary = StockSummary::first();
-            if ($summary->stok_saat_ini < $penebusan->jumlah_tabung) {
-                throw new \Exception('Stok tidak cukup untuk membatalkan penebusan ini.');
+            $vStock = \App\Models\VehicleStock::where('truck_id', $penebusan->truck_id)->first();
+            if (!$vStock || $vStock->stok_saat_ini < $penebusan->jumlah_tabung) {
+                throw new \Exception('Stok kendaraan tidak cukup untuk membatalkan penebusan ini.');
             }
 
-            $newStock = $summary->stok_saat_ini - $penebusan->jumlah_tabung;
-            $summary->update(['stok_saat_ini' => $newStock]);
+            $newVStock = $vStock->stok_saat_ini - $penebusan->jumlah_tabung;
+            $vStock->update(['stok_saat_ini' => $newVStock]);
 
             // Record history for deletion
-            StockHistory::create([
+            \App\Models\VehicleStockHistory::create([
                 'tanggal' => now(),
-                'jenis_transaksi' => 'penebusan',
+                'truck_id' => $penebusan->truck_id,
+                'jenis_mutasi' => 'penyesuaian_stok',
                 'referensi' => 'BATAL-' . $penebusan->nomor_do,
                 'stok_masuk' => 0,
                 'stok_keluar' => $penebusan->jumlah_tabung,
-                'stok_akhir' => $newStock,
+                'stok_akhir' => $newVStock,
                 'keterangan' => 'Pembatalan Penebusan DO #' . $penebusan->nomor_do,
             ]);
 

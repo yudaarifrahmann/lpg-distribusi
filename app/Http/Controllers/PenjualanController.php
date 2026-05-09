@@ -25,7 +25,7 @@ class PenjualanController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'lpgPrice']);
+        $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'lpgPrice', 'returs']);
 
         // Role based filtering - Superadmin and Finance sees all
         if (Auth::user()->hasRole('supir_knek') && !Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan'])) {
@@ -53,6 +53,10 @@ class PenjualanController extends Controller
             $query->where('status_pembayaran', $request->status_pembayaran);
         }
 
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal_penjualan', [$request->start_date, $request->end_date]);
+        }
+
         $penjualans = $query->latest('tanggal_penjualan')->paginate(15);
         $pangkalans = Pangkalan::where('status', 'aktif')->get();
 
@@ -64,7 +68,7 @@ class PenjualanController extends Controller
      */
     public function create()
     {
-        $querySj = SuratJalan::with(['truck', 'supir'])->where('status_perjalanan', 'berangkat');
+        $querySj = SuratJalan::with(['truck.vehicleStock', 'supir'])->where('status_perjalanan', 'berangkat');
         
         // Supir only sees their own active SJ
         if (Auth::user()->hasRole('supir_knek')) {
@@ -171,6 +175,20 @@ class PenjualanController extends Controller
                 ]);
             }
 
+            // 9. Handle Retur if exists
+            if ($request->filled('jumlah_retur') && $request->jumlah_retur > 0) {
+                $penjualan->returs()->create([
+                    'tanggal_retur' => $penjualan->tanggal_penjualan,
+                    'surat_jalan_id' => $sj->id,
+                    'truck_id' => $sj->truck_id,
+                    'driver_id' => $sj->driver_id,
+                    'jumlah_retur' => $request->jumlah_retur,
+                    'kondisi_tabung' => $request->kondisi_tabung,
+                    'keterangan' => 'Retur saat penjualan: ' . ($request->catatan ?? 'Bocor/Rusak'),
+                    'status_retur' => 'pending',
+                ]);
+            }
+
             self::log('Input Penjualan: ' . $invoice, 'penjualan', null, $penjualan->toArray());
 
             DB::commit();
@@ -225,10 +243,10 @@ class PenjualanController extends Controller
         }
 
         $penjualan->update(['status_transfer' => 'verified']);
+        
+        // self::log('Verifikasi Transfer: ' . $penjualan->nomor_invoice, 'penjualan', ['status_transfer' => 'pending'], $penjualan->toArray());
 
-        self::log('Verifikasi Transfer: ' . $penjualan->nomor_invoice, 'penjualan', ['status_transfer' => 'pending'], $penjualan->toArray());
-
-        return back()->with('success', 'Transfer untuk ' . $penjualan->nomor_invoice . ' berhasil diverifikasi.');
+        return redirect()->route('piutang.verifikasi-transfer')->with('success', 'Transfer untuk invoice ' . $penjualan->nomor_invoice . ' berhasil diverifikasi. Uang resmi masuk ke kas.');
     }
 
     /**
@@ -309,5 +327,54 @@ class PenjualanController extends Controller
             DB::rollBack();
             return back()->with('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
         }
+    }
+    public function printRekap(Request $request)
+    {
+        $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'lpgPrice']);
+
+        // Role based filtering
+        if (Auth::user()->hasRole('supir_knek') && !Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan'])) {
+            $driver = Auth::user()->driver;
+            if ($driver) {
+                $query->where('driver_id', $driver->id);
+            } else {
+                $query->where('id', 0);
+            }
+        }
+
+        if ($request->filled('pangkalan_id')) {
+            $query->where('pangkalan_id', $request->pangkalan_id);
+        }
+
+        if ($request->filled('metode_pembayaran')) {
+            $query->where('metode_pembayaran', $request->metode_pembayaran);
+        }
+
+        if ($request->filled('status_pembayaran')) {
+            $query->where('status_pembayaran', $request->status_pembayaran);
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal_penjualan', [$request->start_date, $request->end_date]);
+        }
+
+        $penjualans = $query->latest('tanggal_penjualan')->get();
+        
+        $summary = [
+            'total_tabung' => $penjualans->sum('jumlah_tabung'),
+            'total_omzet' => $penjualans->sum('total_penjualan'),
+            'total_cash' => $penjualans->sum('nominal_cash'),
+            'total_transfer' => $penjualans->sum('nominal_transfer'),
+            'total_piutang' => $penjualans->sum(fn($p) => $p->total_penjualan - $p->nominal_cash - $p->nominal_transfer),
+            'total_retur' => $penjualans->sum(fn($p) => $p->returs->sum('jumlah_retur')),
+        ];
+
+        return view('penjualan.print-rekap', compact('penjualans', 'summary'));
+    }
+
+    public function print(Penjualan $penjualan)
+    {
+        $penjualan->load(['pangkalan', 'truck', 'supir', 'lpgPrice', 'piutang']);
+        return view('penjualan.print', compact('penjualan'));
     }
 }

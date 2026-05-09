@@ -10,6 +10,10 @@ class StockController extends Controller
 {
     public function index(Request $request)
     {
+        if (!\Illuminate\Support\Facades\Auth::user()->can('view stock') && !\Illuminate\Support\Facades\Auth::user()->hasRole('supir_knek')) {
+            abort(403);
+        }
+
         // 1. Gudang Summary
         $summary = StockSummary::first();
         if (!$summary) {
@@ -51,15 +55,31 @@ class StockController extends Controller
 
         // 4. Mutasi Kendaraan (Histories)
         $vehicleHistoryQuery = \App\Models\VehicleStockHistory::with('truck');
+        
         if (\Illuminate\Support\Facades\Auth::user()->hasRole('supir_knek')) {
             $vehicleHistoryQuery->whereIn('truck_id', $truckIds);
         }
+
         if ($request->filled('truck_id')) {
             $vehicleHistoryQuery->where('truck_id', $request->truck_id);
         }
+
+        if ($request->filled('driver_id')) {
+            $driverId = $request->driver_id;
+            // Get references from Penjualan and SuratJalan for this driver
+            $penjualanRefs = \App\Models\Penjualan::where('driver_id', $driverId)->pluck('nomor_invoice')->toArray();
+            $sjRefs = \App\Models\SuratJalan::where('driver_id', $driverId)->pluck('nomor_surat_jalan')->toArray();
+            $penebusanRefs = \App\Models\Penebusan::where('driver_id', $driverId)->pluck('nomor_do')->toArray();
+            
+            $allRefs = array_merge($penjualanRefs, $sjRefs, $penebusanRefs);
+            
+            $vehicleHistoryQuery->whereIn('referensi', $allRefs);
+        }
+
         $vehicleHistories = $vehicleHistoryQuery->latest()->paginate(15, ['*'], 'vehicle_page');
 
         $trucks = \App\Models\Truck::where('status_kendaraan', 'aktif')->get();
+        $drivers = \App\Models\Driver::where('status', 'aktif')->get();
 
         return view('stock.index', compact(
             'totalStokGudang',
@@ -68,7 +88,8 @@ class StockController extends Controller
             'vehicleStocks',
             'gudangHistories',
             'vehicleHistories',
-            'trucks'
+            'trucks',
+            'drivers'
         ));
     }
 }

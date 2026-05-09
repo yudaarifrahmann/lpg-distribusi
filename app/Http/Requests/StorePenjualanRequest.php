@@ -40,6 +40,8 @@ class StorePenjualanRequest extends FormRequest
             'nominal_transfer'    => 'required|numeric|min:0',
             'catatan'             => 'nullable|string',
             'tanggal_jatuh_tempo' => 'nullable|date|after_or_equal:tanggal_penjualan',
+            'jumlah_retur'        => 'nullable|integer',
+            'kondisi_tabung'      => 'nullable|in:rusak,bocor',
         ];
     }
 }

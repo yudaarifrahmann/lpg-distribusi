@@ -24,13 +24,22 @@ class StoreSuratJalanRequest extends FormRequest
         return [
             'nomor_surat_jalan' => 'required|string|unique:surat_jalans,nomor_surat_jalan',
             'tanggal_berangkat' => 'required|date',
-            'penebusan_id' => 'required|exists:penebusans,id',
+            'penebusan_id' => 'nullable|exists:penebusans,id',
             'truck_id' => 'required|exists:trucks,id',
-            'driver_id' => 'required|exists:drivers,id',
-            'knek_id' => 'nullable|exists:drivers,id',
+            'driver_id' => 'required', // Can be ID or 'tembak'
+            'knek_id' => 'nullable', // Can be ID or 'tembak'
             'jumlah_tabung' => 'required|integer|min:1',
             'catatan' => 'nullable|string',
             'foto_surat_jalan' => 'nullable|image|max:2048',
+            'muat_dari_gudang' => 'nullable|boolean',
+            'is_supir_tembak' => 'nullable|boolean',
+            'nama_supir_tembak' => 'required_if:is_supir_tembak,1|nullable|string',
+            'no_hp_supir_tembak' => 'required_if:is_supir_tembak,1|nullable|string',
+            'alamat_supir_tembak' => 'nullable|string',
+            'is_knek_tembak' => 'nullable|boolean',
+            'nama_knek_tembak' => 'required_if:is_knek_tembak,1|nullable|string',
+            'no_hp_knek_tembak' => 'required_if:is_knek_tembak,1|nullable|string',
+            'alamat_knek_tembak' => 'nullable|string',
         ];
     }
 }

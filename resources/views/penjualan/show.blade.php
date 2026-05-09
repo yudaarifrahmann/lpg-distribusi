@@ -9,9 +9,10 @@
             <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
             Kembali
         </a>
-        <button onclick="window.print()" class="px-6 py-2 bg-gray-800 text-white text-sm font-bold rounded-xl hover:bg-gray-700 transition shadow-lg">
+        <a href="{{ route('penjualan.print', $penjualan) }}" target="_blank" class="px-6 py-2 bg-gray-800 text-white text-sm font-bold rounded-xl hover:bg-gray-700 transition shadow-lg flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 2H7V4h6v2zM9 14v2H7v-2h2zm2 2v-2h2v2h-2z" clip-rule="evenodd"/></svg>
             Cetak Invoice
-        </button>
+        </a>
     </div>
 
     <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden relative">

@@ -18,27 +18,36 @@
 
 {{-- Filters --}}
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-    <form method="GET" action="{{ route('penjualan.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        <div class="lg:col-span-2">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nomor invoice..." class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
+    <form method="GET" action="{{ route('penjualan.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="lg:col-span-1">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cari Invoice</label>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="INV..." class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
         </div>
-        <select name="pangkalan_id" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
-            <option value="">Semua Pangkalan</option>
-            @foreach($pangkalans as $p)
-                <option value="{{ $p->id }}" {{ request('pangkalan_id') == $p->id ? 'selected' : '' }}>{{ $p->nama_pangkalan }}</option>
-            @endforeach
-        </select>
-        <select name="metode_pembayaran" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
-            <option value="">Metode Bayar</option>
-            <option value="cash" {{ request('metode_pembayaran') == 'cash' ? 'selected' : '' }}>Cash</option>
-            <option value="transfer" {{ request('metode_pembayaran') == 'transfer' ? 'selected' : '' }}>Transfer</option>
-            <option value="utang" {{ request('metode_pembayaran') == 'utang' ? 'selected' : '' }}>Utang</option>
-            <option value="split" {{ request('metode_pembayaran') == 'split' ? 'selected' : '' }}>Split (Campuran)</option>
-        </select>
-        <div class="flex gap-2">
-            <button type="submit" class="flex-1 px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition">Filter</button>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tanggal Mulai</label>
+            <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tanggal Akhir</label>
+            <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
+        </div>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Pangkalan</label>
+            <select name="pangkalan_id" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                <option value="">Semua Pangkalan</option>
+                @foreach($pangkalans as $p)
+                    <option value="{{ $p->id }}" {{ request('pangkalan_id') == $p->id ? 'selected' : '' }}>{{ $p->nama_pangkalan }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="lg:col-span-4 flex flex-col sm:flex-row gap-2 mt-2">
+            <button type="submit" class="flex-1 px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition">Terapkan Filter</button>
+            <a href="{{ route('penjualan.print-rekap', request()->all()) }}" target="_blank" class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition text-center flex items-center justify-center">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 2H7V4h6v2zM9 14v2H7v-2h2zm2 2v-2h2v2h-2z" clip-rule="evenodd"/></svg>
+                Cetak Laporan (PDF/Print)
+            </a>
             <a href="{{ route('penjualan.index') }}" class="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition text-center flex items-center justify-center">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Reset
             </a>
         </div>
     </form>
@@ -53,6 +62,7 @@
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pangkalan</th>
                     <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty / Harga</th>
                     <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                    <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Retur</th>
                     <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Bayar</th>
                     <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
@@ -74,6 +84,21 @@
                     </td>
                     <td class="px-6 py-4 text-right">
                         <p class="text-sm font-black text-emerald-600">Rp {{ number_format($p->total_penjualan, 0, ',', '.') }}</p>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        @php $totalRetur = $p->returs->sum('jumlah_retur'); @endphp
+                        @if($totalRetur > 0)
+                            <div class="flex flex-col items-center">
+                                <span class="px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold">
+                                    {{ $totalRetur }} Tabung
+                                </span>
+                                <span class="text-[9px] text-amber-500 uppercase font-bold mt-1">
+                                    {{ $p->returs->first()->kondisi_tabung }}
+                                </span>
+                            </div>
+                        @else
+                            <span class="text-gray-300 text-xs">-</span>
+                        @endif
                     </td>
                     <td class="px-6 py-4 text-center">
                         {{-- Metode Badge --}}
@@ -100,6 +125,9 @@
                         <div class="flex items-center justify-center space-x-2">
                             <a href="{{ route('penjualan.show', $p) }}" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition" title="Detail">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+                            </a>
+                            <a href="{{ route('penjualan.print', $p) }}" target="_blank" class="p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition" title="Cetak Invoice">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 2H7V4h6v2zM9 14v2H7v-2h2zm2 2v-2h2v2h-2z" clip-rule="evenodd"/></svg>
                             </a>
                             @canany(['edit pengeluaran', 'view stock'])
                             @if($p->status_transfer === 'pending')

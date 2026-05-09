@@ -127,38 +127,111 @@
                 <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
                     <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Riwayat Pembayaran / Cicilan</h3>
                 </div>
-                <div class="p-0">
-                    <table class="w-full divide-y divide-gray-100">
+                <div class="p-0 overflow-x-auto custom-scrollbar">
+                    <table class="min-w-full divide-y divide-gray-100">
                         <thead class="bg-gray-50/50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Tanggal</th>
-                                <th class="px-6 py-3 text-right text-[10px] font-bold text-gray-400 uppercase">Nominal</th>
-                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Metode</th>
-                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Input Oleh</th>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Keterangan</th>
-                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Bukti</th>
-                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Verifikasi</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Tanggal</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Nominal</th>
+                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Metode</th>
+                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Status</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Input Oleh</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Keterangan</th>
+                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Bukti</th>
+                                @hasanyrole('superadmin|admin_keuangan')
+                                <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">Verifikasi</th>
+                                @endhasanyrole
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
+                            {{-- 1. Initial Payment from Penjualan --}}
+                            @if($piutang->penjualan->nominal_cash > 0 || $piutang->penjualan->nominal_transfer > 0)
+                                {{-- Initial Cash --}}
+                                @if($piutang->penjualan->nominal_cash > 0)
+                                <tr class="bg-gray-50/30 hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 text-xs font-bold text-gray-700 whitespace-nowrap">{{ $piutang->penjualan->tanggal_penjualan->format('d/m/Y') }}</td>
+                                    <td class="px-6 py-4 text-xs text-right font-black text-emerald-600 whitespace-nowrap">Rp {{ number_format($piutang->penjualan->nominal_cash) }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        <span class="text-[10px] font-bold uppercase text-gray-500">CASH (AWAL)</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">Verified</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">{{ $piutang->penjualan->supir->nama ?? 'Sistem' }}</td>
+                                    <td class="px-6 py-4 text-xs text-gray-500 italic whitespace-nowrap">Setoran tunai awal saat pengiriman</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap"><span class="text-gray-300">-</span></td>
+                                    @hasanyrole('superadmin|admin_keuangan')
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                        </span>
+                                    </td>
+                                    @endhasanyrole
+                                </tr>
+                                @endif
+
+                                {{-- Initial Transfer --}}
+                                @if($piutang->penjualan->nominal_transfer > 0)
+                                <tr class="bg-blue-50/20 hover:bg-blue-50/40 transition border-l-4 border-blue-400">
+                                    <td class="px-6 py-4 text-xs font-bold text-gray-700 whitespace-nowrap">{{ $piutang->penjualan->tanggal_penjualan->format('d/m/Y') }}</td>
+                                    <td class="px-6 py-4 text-xs text-right font-black text-blue-600 whitespace-nowrap">Rp {{ number_format($piutang->penjualan->nominal_transfer) }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        <span class="text-[10px] font-bold uppercase text-blue-600">TRANSFER (AWAL)</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        @if($piutang->penjualan->status_transfer == 'pending')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-[10px] font-black uppercase animate-pulse">Pending</span>
+                                        @else
+                                        <span class="inline-flex items-center px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">Verified</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">{{ $piutang->penjualan->supir->nama ?? 'Sistem' }}</td>
+                                    <td class="px-6 py-4 text-xs text-gray-500 italic whitespace-nowrap">Transfer awal saat pengiriman</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap"><span class="text-gray-300">-</span></td>
+                                    @hasanyrole('superadmin|admin_keuangan')
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        @if($piutang->penjualan->status_transfer == 'pending')
+                                            @hasanyrole('superadmin|admin_keuangan')
+                                            <form action="{{ route('penjualan.verify-transfer', $piutang->penjualan) }}" method="POST" onsubmit="return confirm('Verifikasi transfer awal ini?')">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow-lg shadow-blue-500/30" title="Verifikasi transfer awal">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                </button>
+                                            </form>
+                                            @else
+                                            <span class="text-amber-500 text-[10px] font-bold">Pending</span>
+                                            @endhasanyrole
+                                        @elseif($piutang->penjualan->status_transfer == 'verified')
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                        </span>
+                                        @else
+                                        <span class="text-gray-300">-</span>
+                                        @endif
+                                    </td>
+                                    @endhasanyrole
+                                </tr>
+                                @endif
+                            @endif
+
+                            {{-- 2. Regular Installments (Pembayarans) --}}
                             @forelse($piutang->pembayarans as $bayar)
                             <tr class="hover:bg-gray-50/50 transition">
-                                <td class="px-6 py-4 text-xs font-bold text-gray-700">{{ $bayar->tanggal_pembayaran->format('d/m/Y') }}</td>
-                                <td class="px-6 py-4 text-xs text-right font-black text-emerald-600">Rp {{ number_format($bayar->nominal_pembayaran) }}</td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-xs font-bold text-gray-700 whitespace-nowrap">{{ $bayar->tanggal_pembayaran->format('d/m/Y') }}</td>
+                                <td class="px-6 py-4 text-xs text-right font-black text-emerald-600 whitespace-nowrap">Rp {{ number_format($bayar->nominal_pembayaran) }}</td>
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span class="text-[10px] font-bold uppercase text-gray-500">{{ $bayar->metode_pembayaran }}</span>
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
                                     @if($bayar->status_verifikasi == 'pending')
                                     <span class="inline-flex items-center px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-[10px] font-black uppercase">Pending</span>
                                     @else
                                     <span class="inline-flex items-center px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">Verified</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-xs text-gray-500">{{ $bayar->user->name }}</td>
-                                <td class="px-6 py-4 text-xs text-gray-500">{{ $bayar->keterangan ?? '-' }}</td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">{{ $bayar->user->name }}</td>
+                                <td class="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">{{ $bayar->keterangan ?? '-' }}</td>
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
                                     @if($bayar->bukti_pembayaran)
                                     <a href="{{ Storage::url($bayar->bukti_pembayaran) }}" target="_blank" class="text-blue-500 hover:text-blue-700">
                                         <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -167,26 +240,32 @@
                                     <span class="text-gray-300">-</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if($bayar->status_verifikasi == 'pending' && Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan']))
-                                    <form action="{{ route('pembayaran-piutang.verify', $bayar) }}" method="POST" onsubmit="return confirm('Tandai transfer ini sudah masuk dan verifikasi pembayaran?')">
-                                        @csrf
-                                        <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition" title="Verifikasi transfer">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                        </button>
-                                    </form>
+                                @hasanyrole('superadmin|admin_keuangan')
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    @if($bayar->status_verifikasi == 'pending')
+                                        @hasanyrole('superadmin|admin_keuangan')
+                                        <form action="{{ route('pembayaran-piutang.verify', $bayar) }}" method="POST" onsubmit="return confirm('Tandai transfer ini sudah masuk dan verifikasi pembayaran?')">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30" title="Verifikasi transfer">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            </button>
+                                        </form>
+                                        @else
+                                        <span class="text-amber-500 text-[10px] font-bold italic">Pending Verification</span>
+                                        @endhasanyrole
                                     @elseif($bayar->status_verifikasi == 'verified')
-                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700" title="Sudah diverifikasi">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                                     </span>
                                     @else
                                     <span class="text-gray-300">-</span>
                                     @endif
                                 </td>
+                                @endhasanyrole
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada riwayat pembayaran.</td>
+                                <td colspan="8" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada riwayat cicilan tambahan.</td>
                             </tr>
                             @endforelse
                         </tbody>

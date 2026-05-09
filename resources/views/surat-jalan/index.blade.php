@@ -54,18 +54,30 @@
                 <tr class="hover:bg-blue-50/40 transition">
                     <td class="px-6 py-4">
                         <p class="text-sm font-bold text-gray-800">{{ $sj->nomor_surat_jalan }}</p>
-                        <p class="text-xs text-gray-400">DO #{{ $sj->penebusan->nomor_do }}</p>
+                        <p class="text-xs text-gray-400">
+                            @if($sj->penebusan)
+                                DO #{{ $sj->penebusan->nomor_do }}
+                            @else
+                                <span class="text-indigo-500 font-bold uppercase tracking-widest text-[9px]">Muat Gudang</span>
+                            @endif
+                        </p>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $sj->tanggal_berangkat->format('d/m/Y') }}</td>
                     <td class="px-6 py-4">
                         <p class="text-xs font-bold text-gray-700">{{ $sj->truck->nomor_polisi }}</p>
-                        <p class="text-xs text-gray-500">{{ $sj->supir->nama }}</p>
+                        <p class="text-xs text-gray-500">
+                            @if($sj->is_supir_tembak)
+                                <span class="text-amber-600 font-bold">[TEMBAK]</span> {{ $sj->nama_supir_tembak }}
+                            @else
+                                {{ $sj->supir->nama ?? '-' }}
+                            @endif
+                        </p>
                     </td>
                     <td class="px-6 py-4 text-sm font-bold text-indigo-600">{{ number_format($sj->jumlah_tabung) }}</td>
                     <td class="px-6 py-4">
                         @php
                             $statusColors = [
-                                'persiapan' => 'bg-gray-100 text-gray-600',
+                                'persiapan' => 'bg-amber-100 text-amber-700',
                                 'berangkat' => 'bg-blue-100 text-blue-700',
                                 'selesai' => 'bg-emerald-100 text-emerald-700',
                                 'retur' => 'bg-red-100 text-red-700',
