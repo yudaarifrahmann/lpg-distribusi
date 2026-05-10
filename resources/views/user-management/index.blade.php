@@ -45,6 +45,7 @@
                     <tr>
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">User</th>
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
+                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Cabang</th>
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Profil Driver</th>
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Dibuat</th>
                         <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase">Aksi</th>
@@ -74,6 +75,9 @@
                                 <span class="text-xs text-gray-400">Belum ada role</span>
                                 @endforelse
                             </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ $user->branch ? $user->branch->name : 'Global' }}
                         </td>
                         <td class="px-6 py-4">
                             @if($user->driver_count > 0)

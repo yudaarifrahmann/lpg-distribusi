@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     // Surat Jalan
     Route::resource('surat-jalan', SuratJalanController::class)->middleware('can:view surat jalan');
     Route::get('surat-jalan/{suratJalan}/print', [SuratJalanController::class, 'print'])->name('surat-jalan.print')->middleware('can:view surat jalan');
+    Route::get('surat-jalan/{suratJalan}/download', [SuratJalanController::class, 'download'])->name('surat-jalan.download')->middleware('can:view surat jalan');
+    Route::patch('surat-jalan/{suratJalan}/update-status', [SuratJalanController::class, 'updateStatus'])->name('surat-jalan.update-status')->middleware('can:view surat jalan');
 
     // Vehicle Stock (Return Route Only)
     Route::post('/vehicle-stock/{truck}/return', [VehicleStockController::class, 'returnStock'])->name('vehicle-stock.return');
@@ -108,6 +110,7 @@ Route::middleware('auth')->group(function () {
     // Laporan
     Route::middleware('can:view laporan')->prefix('laporan')->group(function () {
         Route::get('/global', [ReportController::class, 'globalReport'])->name('report.global');
+        Route::get('/global/export', [ReportController::class, 'exportGlobal'])->name('report.global.export');
         Route::get('/penjualan', [ReportController::class, 'penjualan'])->name('report.penjualan');
         Route::get('/penjualan/export', [ReportController::class, 'exportPenjualan'])->name('report.penjualan.export');
         Route::get('/pengeluaran', [ReportController::class, 'pengeluaran'])->name('report.pengeluaran');
@@ -136,5 +139,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('expense-category', ExpenseCategoryController::class)->parameters([
             'expense-category' => 'expenseCategory',
         ]);
+
+        // Cabang
+        Route::resource('branch', App\Http\Controllers\BranchController::class);
     });
 });

@@ -61,15 +61,33 @@ class DashboardController extends Controller
                 $topPangkalanQuery->where('penjualans.driver_id', $driverId);
                 $monthlyPenjualanQuery->where('driver_id', $driverId);
                 
-                // For supir, find their truck via the latest assignment (Surat Jalan)
+                // For supir, find their truck via the latest assignment (Surat Jalan or Penebusan)
                 if ($driver) {
                     $latestSJ = SuratJalan::where(function($q) use ($driverId) {
                         $q->where('driver_id', $driverId)
                           ->orWhere('knek_id', $driverId);
-                    })->latest()->first();
-                    
-                    if ($latestSJ) {
-                        $stokKendaraan = VehicleStock::where('truck_id', $latestSJ->truck_id)->sum('stok_saat_ini');
+                    })->latest('created_at')->first();
+
+                    $latestPenebusan = Penebusan::where('driver_id', $driverId)
+                                                ->latest('created_at')->first();
+
+                    $truckId = null;
+                    if ($latestSJ && $latestPenebusan) {
+                        if ($latestSJ->created_at->gt($latestPenebusan->created_at)) {
+                            $truckId = $latestSJ->truck_id;
+                        } else {
+                            $truckId = $latestPenebusan->truck_id;
+                        }
+                    } elseif ($latestSJ) {
+                        $truckId = $latestSJ->truck_id;
+                    } elseif ($latestPenebusan) {
+                        $truckId = $latestPenebusan->truck_id;
+                    } else {
+                        $truckId = $driver->truck_id;
+                    }
+
+                    if ($truckId) {
+                        $stokKendaraan = VehicleStock::where('truck_id', $truckId)->sum('stok_saat_ini');
                     } else {
                         $stokKendaraan = 0;
                     }

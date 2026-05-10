@@ -51,12 +51,21 @@ class DriverController extends Controller
     {
         // Get users with supir_knek role that are not already assigned to a driver.
         $assignedUserIds = Driver::withTrashed()->pluck('user_id')->toArray();
-        $users = User::role('supir_knek')
+        $query = User::role('supir_knek')
                      ->with('roles')
-                     ->whereNotIn('id', $assignedUserIds)
-                     ->get();
+                     ->whereNotIn('id', $assignedUserIds);
 
-        return response()->json(['users' => $users]);
+        if (!auth()->user()->hasRole('superadmin') && auth()->user()->branch_id) {
+            $query->where('branch_id', auth()->user()->branch_id);
+        }
+
+        $users = $query->get();
+        $trucks = \App\Models\Truck::where('status_kendaraan', 'aktif')->get();
+
+        return response()->json([
+            'users' => $users,
+            'trucks' => $trucks
+        ]);
     }
 
     /**
@@ -64,10 +73,14 @@ class DriverController extends Controller
      */
     public function store(StoreDriverRequest $request)
     {
-        Driver::create($request->validated());
+        $validated = $request->validated();
+
+        foreach ($validated['drivers'] as $driverData) {
+            Driver::create($driverData);
+        }
 
         return redirect()->route('driver.index')
-                        ->with('success', 'Supir/Knek berhasil ditambahkan');
+                        ->with('success', count($validated['drivers']) . ' Supir/Knek berhasil ditambahkan');
     }
 
     /**
@@ -88,14 +101,21 @@ class DriverController extends Controller
                                 ->where('id', '!=', $driver->id)
                                 ->pluck('user_id')
                                 ->toArray();
-        $users = User::role('supir_knek')
+        $query = User::role('supir_knek')
                      ->with('roles')
-                     ->whereNotIn('id', $assignedUserIds)
-                     ->get();
+                     ->whereNotIn('id', $assignedUserIds);
+
+        if (!auth()->user()->hasRole('superadmin') && auth()->user()->branch_id) {
+            $query->where('branch_id', auth()->user()->branch_id);
+        }
+
+        $users = $query->get();
+        $trucks = \App\Models\Truck::where('status_kendaraan', 'aktif')->get();
 
         return response()->json([
             'driver' => $driver->load('user'),
             'users' => $users,
+            'trucks' => $trucks,
         ]);
     }
 

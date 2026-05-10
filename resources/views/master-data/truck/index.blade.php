@@ -3,7 +3,7 @@
 @section('page_title', 'Master Truk')
 
 @section('content')
-<div x-data="{ showCreate: false, showEdit: false, editData: {} }">
+<div x-data="{ showCreate: false, showEdit: false, editData: {}, trucks: {{ json_encode(old('trucks', [['nama_truk'=>'', 'nomor_polisi'=>'', 'kapasitas_tabung'=>'', 'status_kendaraan'=>'aktif']])) }} }">
 
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div>
@@ -108,34 +108,59 @@
                 </div>
                 <form action="{{ route('truck.store') }}" method="POST" class="space-y-4">
                     @csrf
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Truk <span class="text-red-500">*</span></label>
-                        <input type="text" name="nama_truk" value="{{ old('nama_truk') }}" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        @error('nama_truk')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    @if($errors->any())
+                    <div class="bg-red-50 text-red-600 p-4 rounded-xl text-sm mb-4">
+                        <ul class="list-disc pl-5 space-y-1">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Polisi <span class="text-red-500">*</span></label>
-                        <input type="text" name="nomor_polisi" value="{{ old('nomor_polisi') }}" required placeholder="Contoh: B 1234 ABC" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono uppercase">
-                        @error('nomor_polisi')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    @endif
+                    <div class="max-h-[60vh] overflow-y-auto pr-2 space-y-4">
+                        <template x-for="(truck, index) in trucks" :key="index">
+                            <div class="relative p-4 border border-gray-200 rounded-xl bg-gray-50/50">
+                                <button type="button" x-show="trucks.length > 1" @click="trucks.splice(index, 1)" class="absolute top-3 right-3 text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition" title="Hapus baris ini">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                </button>
+                                
+                                <div class="grid grid-cols-1 gap-4 mt-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Truk <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="truck.nama_truk" :name="`trucks[${index}][nama_truk]`" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Polisi <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="truck.nomor_polisi" :name="`trucks[${index}][nomor_polisi]`" required placeholder="Contoh: B 1234 ABC" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono uppercase">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Kapasitas Tabung <span class="text-red-500">*</span></label>
+                                            <input type="number" x-model="truck.kapasitas_tabung" :name="`trucks[${index}][kapasitas_tabung]`" required min="1" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>
+                                            <select x-model="truck.status_kendaraan" :name="`trucks[${index}][status_kendaraan]`" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="aktif">Aktif</option>
+                                                <option value="service">Service</option>
+                                                <option value="nonaktif">Nonaktif</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Kapasitas Tabung <span class="text-red-500">*</span></label>
-                            <input type="number" name="kapasitas_tabung" value="{{ old('kapasitas_tabung') }}" required min="1" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            @error('kapasitas_tabung')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    
+                    <div class="flex justify-between items-center pt-4 border-t mt-4">
+                        <button type="button" @click="trucks.push({nama_truk:'', nomor_polisi:'', kapasitas_tabung:'', status_kendaraan:'aktif'})" class="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg flex items-center transition">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                            Tambah Truk Lainnya
+                        </button>
+                        <div class="flex space-x-3">
+                            <button type="button" @click="showCreate = false" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Batal</button>
+                            <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition">Simpan Semua</button>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>
-                            <select name="status_kendaraan" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="aktif">Aktif</option>
-                                <option value="service">Service</option>
-                                <option value="nonaktif">Nonaktif</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="flex justify-end space-x-3 pt-4 border-t">
-                        <button type="button" @click="showCreate = false" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Batal</button>
-                        <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition">Simpan</button>
                     </div>
                 </form>
             </div>
@@ -185,7 +210,7 @@
     </div>
 </div>
 
-@if($errors->any())
+@if($errors->any() || session('showCreate'))
 <script>document.addEventListener('DOMContentLoaded', () => { document.querySelector('[x-data]').__x.$data.showCreate = true; });</script>
 @endif
 @endsection

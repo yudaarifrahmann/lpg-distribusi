@@ -89,40 +89,20 @@
             <div class="pt-4 border-t border-gray-100" x-data="{ isSupirTembak: false, isKnekTembak: false }">
                 <h4 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Personil & Armada</h4>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                    {{-- Truck Section --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Truck Armada <span class="text-red-500">*</span></label>
-                        <select name="truck_id" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
-                            <option value="">-- Pilih Truck --</option>
-                            @foreach($trucks as $truck)
-                                <option value="{{ $truck->id }}" {{ old('truck_id') == $truck->id ? 'selected' : '' }}>
-                                    {{ $truck->nomor_polisi }} ({{ $truck->nama_truk }})
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('truck_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                    </div>
-
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     {{-- Driver Section --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Supir Utama <span class="text-red-500">*</span></label>
-                        <select name="driver_id" required @change="isSupirTembak = ($event.target.value === 'tembak')" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition" :class="isSupirTembak ? 'border-amber-400 bg-amber-50' : ''">
+                        <select name="driver_id" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
                             <option value="">-- Pilih Supir --</option>
                             @foreach($supirs as $supir)
-                                <option value="{{ $supir->id }}" {{ old('driver_id') == $supir->id ? 'selected' : '' }}>{{ $supir->nama }}</option>
+                                <option value="{{ $supir->id }}" {{ old('driver_id') == $supir->id ? 'selected' : '' }}>
+                                    {{ $supir->nama }} (Truck: {{ $supir->truck->nomor_polisi ?? '-' }})
+                                </option>
                             @endforeach
-                            <option value="tembak" {{ old('driver_id') == 'tembak' ? 'selected' : '' }}>-- SUPIR TEMBAK (LUAR) --</option>
                         </select>
-                        <input type="hidden" name="is_supir_tembak" :value="isSupirTembak ? 1 : 0">
-                        
-                        {{-- Driver Tembak Inputs --}}
-                        <div x-show="isSupirTembak" x-transition class="mt-3 p-4 bg-amber-50 rounded-xl border border-amber-100 space-y-3">
-                            <p class="text-[10px] font-bold text-amber-800 uppercase tracking-widest">Detail Supir Luar</p>
-                            <input type="text" name="nama_supir_tembak" placeholder="Nama Lengkap" :required="isSupirTembak" class="w-full px-3 py-2 border border-amber-200 rounded-lg text-xs focus:ring-1 focus:ring-amber-500">
-                            <input type="text" name="no_hp_supir_tembak" placeholder="Nomor HP" :required="isSupirTembak" class="w-full px-3 py-2 border border-amber-200 rounded-lg text-xs focus:ring-1 focus:ring-amber-500">
-                            <input type="text" name="alamat_supir_tembak" placeholder="Alamat (Opsional)" class="w-full px-3 py-2 border border-amber-200 rounded-lg text-xs focus:ring-1 focus:ring-amber-500">
-                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Truck armada otomatis menggunakan Truck Default supir.</p>
+                        @error('driver_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     {{-- Knek Section --}}

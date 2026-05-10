@@ -23,3 +23,13 @@
         @apply bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg;
     }
 }
+
+@layer utilities {
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}

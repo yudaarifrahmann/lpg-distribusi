@@ -246,7 +246,7 @@ class PenjualanController extends Controller
         
         // self::log('Verifikasi Transfer: ' . $penjualan->nomor_invoice, 'penjualan', ['status_transfer' => 'pending'], $penjualan->toArray());
 
-        return redirect()->route('piutang.verifikasi-transfer')->with('success', 'Transfer untuk invoice ' . $penjualan->nomor_invoice . ' berhasil diverifikasi. Uang resmi masuk ke kas.');
+        return redirect()->route('piutang.index')->with('success', 'Transfer untuk invoice ' . $penjualan->nomor_invoice . ' berhasil diverifikasi. Uang resmi masuk ke kas.');
     }
 
     /**

@@ -184,63 +184,129 @@ class ReportController extends Controller
     }
 
     /**
+     * Export Global Report to Excel
+     */
+    public function exportGlobal(Request $request)
+    {
+        return Excel::download(new \App\Exports\GlobalReportExport($request), 'laporan-global-' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    /**
      * Laporan Global (Semua Pemasukan, Pengeluaran, dan Retur Gudang)
      */
     public function globalReport(Request $request)
     {
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
+        $branchId = $user->branch_id;
+
         $startDate = $request->filled('start_date') ? $request->start_date : Carbon::now()->startOfMonth()->toDateString();
         $endDate = $request->filled('end_date') ? $request->end_date : Carbon::now()->endOfMonth()->toDateString();
+        $search = $request->search;
+        $paymentMethod = $request->payment_method;
 
         // Get Penjualan (Income)
-        $penjualans = Penjualan::with(['truck', 'supir'])
-            ->whereBetween('tanggal_penjualan', [$startDate, $endDate])
-            ->get()
-            ->map(function($item) {
-                return [
-                    'type' => 'penjualan',
-                    'tanggal' => $item->tanggal_penjualan,
-                    'nama_truk' => $item->truck->nama_truk ?? '-',
-                    'nama_supir' => $item->supir->nama ?? '-',
-                    'nominal' => $item->total_penjualan,
-                    'jumlah_tabung' => $item->jumlah_tabung,
-                    'keterangan' => 'Penjualan - ' . $item->nomor_invoice,
-                    'status' => 'Pemasukan',
-                ];
+        $penjualanQuery = Penjualan::with(['truck', 'supir', 'branch'])
+            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('tanggal_penjualan', [$startDate, $endDate]);
+
+        if ($search) {
+            $penjualanQuery->where(function($q) use ($search) {
+                $q->whereHas('truck', fn($t) => $t->where('nomor_polisi', 'like', "%$search%"))
+                  ->orWhereHas('supir', fn($s) => $s->where('nama', 'like', "%$search%"))
+                  ->orWhere('nomor_invoice', 'like', "%$search%");
             });
+        }
+
+        if ($paymentMethod) {
+            if ($paymentMethod === 'cash') $penjualanQuery->where('nominal_cash', '>', 0);
+            elseif ($paymentMethod === 'transfer') $penjualanQuery->where('nominal_transfer', '>', 0);
+            elseif ($paymentMethod === 'utang') $penjualanQuery->whereRaw('(total_penjualan - nominal_cash - nominal_transfer) > 0');
+        }
+
+        $penjualans = $penjualanQuery->get()->map(function($item) {
+            return [
+                'type' => 'penjualan',
+                'tanggal' => $item->tanggal_penjualan,
+                'cabang' => $item->branch->name ?? '-',
+                'nama_truk' => $item->truck->nomor_polisi ?? '-',
+                'nama_supir' => $item->supir->nama ?? '-',
+                'nominal' => $item->total_penjualan,
+                'cash' => $item->nominal_cash,
+                'transfer' => $item->nominal_transfer,
+                'utang' => $item->total_penjualan - $item->nominal_cash - $item->nominal_transfer,
+                'jumlah_tabung' => $item->jumlah_tabung,
+                'keterangan' => 'Penjualan - ' . $item->nomor_invoice,
+                'status' => 'Pemasukan',
+            ];
+        });
 
         // Get Expenses (Pengeluaran)
-        $expenses = Expense::with(['category', 'user'])
+        $expenseQuery = Expense::with(['category', 'user', 'branch'])
+            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
             ->where('status_verifikasi', 'disetujui')
-            ->whereBetween('tanggal_pengeluaran', [$startDate, $endDate])
-            ->get()
-            ->map(function($item) {
-                return [
-                    'type' => 'expense',
-                    'tanggal' => $item->tanggal_pengeluaran,
-                    'nama_truk' => '-',
-                    'nama_supir' => $item->user->name ?? '-',
-                    'nominal' => $item->nominal,
-                    'jumlah_tabung' => 0,
-                    'keterangan' => 'Pengeluaran - ' . ($item->category ? $item->category->nama_kategori : $item->nama_pengeluaran),
-                    'status' => 'Pengeluaran',
-                ];
+            ->whereBetween('tanggal_pengeluaran', [$startDate, $endDate]);
+
+        if ($search) {
+            $expenseQuery->where(function($q) use ($search) {
+                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%$search%"))
+                  ->orWhere('nama_pengeluaran', 'like', "%$search%");
             });
+        }
+        
+        // Expenses are usually cash, if filtering by TF or Utang, they might be empty unless specific logic exists
+        if ($paymentMethod && $paymentMethod !== 'cash') {
+            $expenseQuery->where('id', 0); // Hide if filtering for TF/Utang
+        }
+
+        $expenses = $expenseQuery->get()->map(function($item) {
+            return [
+                'type' => 'expense',
+                'tanggal' => $item->tanggal_pengeluaran,
+                'cabang' => $item->branch->name ?? '-',
+                'nama_truk' => '-',
+                'nama_supir' => $item->user->name ?? '-',
+                'nominal' => $item->nominal,
+                'cash' => $item->nominal,
+                'transfer' => 0,
+                'utang' => 0,
+                'jumlah_tabung' => 0,
+                'keterangan' => 'Pengeluaran - ' . ($item->category ? $item->category->nama_kategori : $item->nama_pengeluaran),
+                'status' => 'Pengeluaran',
+            ];
+        });
 
         // Get Retur Tabung (Warehouse Returns)
-        $returs = ReturTabung::with(['truck', 'supir'])
+        $returQuery = ReturTabung::with(['truck', 'supir', 'branch'])
+            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
             ->whereBetween('tanggal_retur', [$startDate, $endDate])
-            ->where('status_retur', 'diterima')
-            ->get()
-            ->map(function($item) {
+            ->whereIn('status_retur', ['pending', 'diterima']);
+
+        if ($search) {
+            $returQuery->where(function($q) use ($search) {
+                $q->whereHas('truck', fn($t) => $t->where('nomor_polisi', 'like', "%$search%"))
+                  ->orWhereHas('supir', fn($s) => $s->where('nama', 'like', "%$search%"));
+            });
+        }
+
+        if ($paymentMethod) {
+            $returQuery->where('id', 0); // Returns have no payment
+        }
+
+        $returs = $returQuery->get()->map(function($item) {
                 return [
                     'type' => 'retur',
                     'tanggal' => $item->tanggal_retur,
-                    'nama_truk' => $item->truck->nama_truk ?? '-',
+                    'cabang' => $item->branch->name ?? '-',
+                    'nama_truk' => $item->truck->nomor_polisi ?? '-',
                     'nama_supir' => $item->supir->nama ?? '-',
                     'nominal' => 0,
+                    'cash' => 0,
+                    'transfer' => 0,
+                    'utang' => 0,
                     'jumlah_tabung' => $item->jumlah_retur,
-                    'keterangan' => 'Retur Tabung - ' . $item->kondisi_tabung,
-                    'status' => 'Retur Gudang',
+                    'keterangan' => 'Retur Tabung - ' . $item->kondisi_tabung . ' (' . ucfirst($item->status_retur) . ')',
+                    'status' => 'Retur',
                 ];
             });
 
@@ -258,6 +324,9 @@ class ReportController extends Controller
             'total_retur_tabung' => $returs->sum('jumlah_tabung'),
             'total_tabung_penjualan' => $penjualans->sum('jumlah_tabung'),
             'saldo' => $penjualans->sum('nominal') - $expenses->sum('nominal'),
+            'total_cash' => $penjualans->sum('cash'),
+            'total_transfer' => $penjualans->sum('transfer'),
+            'total_utang' => $penjualans->sum('utang'),
         ];
 
         return view('report.global', compact(

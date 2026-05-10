@@ -21,7 +21,7 @@
              class="fixed inset-0 bg-black/50 z-20 lg:hidden" x-cloak></div>
 
         {{-- Sidebar --}}
-        <aside class="fixed lg:static inset-y-0 left-0 z-30 w-64 bg-gray-900 text-gray-100 shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col"
+        <aside class="fixed lg:static inset-y-0 left-0 z-30 w-64 bg-gray-900 text-gray-100 shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col no-scrollbar"
                :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
 
             {{-- Logo --}}
@@ -86,6 +86,9 @@
                         </a>
                         <a href="{{ route('expense-category.index') }}" class="sidebar-link text-xs {{ request()->routeIs('expense-category.*') ? 'active' : '' }}">
                             <span class="w-1.5 h-1.5 rounded-full mr-3 {{ request()->routeIs('expense-category.*') ? 'bg-white' : 'bg-gray-600' }}"></span>Kategori Pengeluaran
+                        </a>
+                        <a href="{{ route('branch.index') }}" class="sidebar-link text-xs {{ request()->routeIs('branch.*') ? 'active' : '' }}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-3 {{ request()->routeIs('branch.*') ? 'bg-white' : 'bg-gray-600' }}"></span>Cabang
                         </a>
                     </div>
                 </div>

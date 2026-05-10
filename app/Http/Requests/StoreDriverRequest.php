@@ -23,26 +23,28 @@ class StoreDriverRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => 'required|exists:users,id|unique:drivers,user_id',
-            'nama' => 'required|string|max:255',
-            'nomor_hp' => 'required|string|max:20',
-            'alamat' => 'required|string',
-            'role_pekerjaan' => 'required|in:supir,knek',
-            'status' => 'required|in:aktif,nonaktif',
+            'drivers' => 'required|array|min:1',
+            'drivers.*.user_id' => 'required|exists:users,id|unique:drivers,user_id',
+            'drivers.*.nama' => 'required|string|max:255',
+            'drivers.*.nomor_hp' => 'required|string|max:20',
+            'drivers.*.alamat' => 'required|string',
+            'drivers.*.role_pekerjaan' => 'required|in:supir,knek',
+            'drivers.*.truck_id' => 'nullable|exists:trucks,id',
+            'drivers.*.status' => 'required|in:aktif,nonaktif',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'user_id.required' => 'User wajib dipilih',
-            'user_id.exists' => 'User tidak ditemukan',
-            'user_id.unique' => 'User sudah terdaftar sebagai driver',
-            'nama.required' => 'Nama wajib diisi',
-            'nomor_hp.required' => 'Nomor HP wajib diisi',
-            'alamat.required' => 'Alamat wajib diisi',
-            'role_pekerjaan.required' => 'Role pekerjaan wajib dipilih',
-            'status.required' => 'Status wajib dipilih',
+            'drivers.*.user_id.required' => 'User wajib dipilih',
+            'drivers.*.user_id.exists' => 'User tidak ditemukan',
+            'drivers.*.user_id.unique' => 'User sudah terdaftar sebagai driver',
+            'drivers.*.nama.required' => 'Nama wajib diisi',
+            'drivers.*.nomor_hp.required' => 'Nomor HP wajib diisi',
+            'drivers.*.alamat.required' => 'Alamat wajib diisi',
+            'drivers.*.role_pekerjaan.required' => 'Role pekerjaan wajib dipilih',
+            'drivers.*.status.required' => 'Status wajib dipilih',
         ];
     }
 

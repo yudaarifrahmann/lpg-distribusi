@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Pangkalan extends Model
 {
+    use BelongsToBranch;
+
     use SoftDeletes;
 
     protected $fillable = [

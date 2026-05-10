@@ -28,6 +28,7 @@ class UpdateDriverRequest extends FormRequest
             'nomor_hp' => 'required|string|max:20',
             'alamat' => 'required|string',
             'role_pekerjaan' => 'required|in:supir,knek',
+            'truck_id' => 'nullable|exists:trucks,id',
             'status' => 'required|in:aktif,nonaktif',
         ];
     }

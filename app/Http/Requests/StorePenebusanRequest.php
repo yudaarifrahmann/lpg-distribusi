@@ -25,7 +25,6 @@ class StorePenebusanRequest extends FormRequest
             'nomor_do' => 'required|string|unique:penebusans,nomor_do',
             'tanggal_penebusan' => 'required|date',
             'schedule_agreement_id' => 'required|exists:schedule_agreements,id',
-            'truck_id' => 'required|exists:trucks,id',
             'driver_id' => 'required|exists:drivers,id',
             'foto_nota' => 'nullable|image|max:2048', // max 2MB
         ];

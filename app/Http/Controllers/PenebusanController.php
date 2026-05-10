@@ -40,8 +40,7 @@ class PenebusanController extends Controller
      */
     public function create(Request $request)
     {
-        $trucks = Truck::where('status_kendaraan', 'aktif')->get();
-        $drivers = Driver::where('status', 'aktif')->get();
+        $drivers = Driver::where('status', 'aktif')->whereNotNull('truck_id')->get();
         $sas = ScheduleAgreement::where('status_sa', 'pending')->get();
         
         $selectedSaId = $request->sa_id;
@@ -50,7 +49,7 @@ class PenebusanController extends Controller
             $selectedSa = ScheduleAgreement::find($selectedSaId);
         }
 
-        return view('penebusan.create', compact('trucks', 'drivers', 'sas', 'selectedSa'));
+        return view('penebusan.create', compact('drivers', 'sas', 'selectedSa'));
     }
 
     /**
@@ -69,6 +68,12 @@ class PenebusanController extends Controller
         $data['harga_per_do'] = 6487298;
         $data['total_penebusan'] = $data['harga_per_do'];
         $data['status_penebusan'] = 'berhasil';
+
+        $driver = Driver::findOrFail($data['driver_id']);
+        if (!$driver->truck_id) {
+            return back()->with('error', 'Supir yang dipilih tidak memiliki Truck Armada default. Silakan atur Truck Default di Master Supir/Knek terlebih dahulu.')->withInput();
+        }
+        $data['truck_id'] = $driver->truck_id;
 
         DB::beginTransaction();
 

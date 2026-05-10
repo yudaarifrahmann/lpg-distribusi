@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\BelongsToBranch;
 
 class StockMutation extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToBranch;
 
     protected $fillable = [
         'tanggal',
@@ -20,6 +20,7 @@ class StockMutation extends Model
         'stok_keluar',
         'stok_akhir',
         'user_id',
+        'branch_id',
     ];
 
     protected $casts = [

@@ -62,12 +62,15 @@ class SuratJalanController extends Controller
             ->whereDoesntHave('suratJalan')
             ->latest()
             ->get();
-        $trucks = Truck::where('status_kendaraan', 'aktif')->get();
-        $supirs = Driver::where('role_pekerjaan', 'supir')->where('status', 'aktif')->get();
+        $supirs = Driver::where('role_pekerjaan', 'supir')
+            ->where('status', 'aktif')
+            ->whereNotNull('truck_id')
+            ->with('truck')
+            ->get();
         $kneks = Driver::where('role_pekerjaan', 'knek')->where('status', 'aktif')->get();
         $stokGudang = \App\Models\StockSummary::first()?->stok_saat_ini ?? 0;
 
-        return view('surat-jalan.create', compact('penebusans', 'trucks', 'supirs', 'kneks', 'stokGudang'));
+        return view('surat-jalan.create', compact('penebusans', 'supirs', 'kneks', 'stokGudang'));
     }
 
     /**
@@ -83,7 +86,20 @@ class SuratJalanController extends Controller
             if ($data['driver_id'] === 'tembak') {
                 $data['driver_id'] = null;
                 $data['is_supir_tembak'] = true;
+                // Since Truck is now automatic, we need to know which truck for supir tembak.
+                // If the user removed the truck field, we might need a default or error out.
+                // However, I'll try to find if a truck was passed (maybe hidden) or just error for now.
+                if (!isset($data['truck_id'])) {
+                    throw new \Exception('Supir tembak memerlukan pemilihan Truck Armada. Silakan hubungi pengembang.');
+                }
+            } else {
+                $driver = Driver::findOrFail($data['driver_id']);
+                $data['truck_id'] = $driver->truck_id;
+                if (!$data['truck_id']) {
+                    throw new \Exception('Supir yang dipilih tidak memiliki Truck Armada default.');
+                }
             }
+
             if ($data['knek_id'] === 'tembak') {
                 $data['knek_id'] = null;
                 $data['is_knek_tembak'] = true;
@@ -264,5 +280,90 @@ class SuratJalanController extends Controller
     {
         $suratJalan->load(['truck', 'supir', 'knek', 'penebusan']);
         return view('surat-jalan.print', compact('suratJalan'));
+    }
+
+    /**
+     * Download Surat Jalan as PDF
+     */
+    public function download(SuratJalan $suratJalan)
+    {
+        $suratJalan->load(['truck', 'supir', 'knek', 'penebusan']);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('surat-jalan.print', compact('suratJalan'));
+        return $pdf->download('surat-jalan-' . $suratJalan->nomor_surat_jalan . '.pdf');
+    }
+
+    /**
+     * Update the status of the surat jalan
+     */
+    public function updateStatus(Request $request, SuratJalan $suratJalan)
+    {
+        $request->validate([
+            'status_perjalanan' => 'required|in:persiapan,berangkat,selesai,dibatalkan',
+        ]);
+
+        $oldStatus = $suratJalan->status_perjalanan;
+        $newStatus = $request->status_perjalanan;
+
+        // Prevent status changes from certain states
+        if ($oldStatus === 'selesai' && !Auth::user()->hasRole('superadmin')) {
+            return back()->with('error', 'Surat Jalan yang sudah selesai tidak dapat diubah statusnya.');
+        }
+
+        if ($oldStatus === 'retur') {
+            return back()->with('error', 'Surat Jalan yang sudah di-retur tidak dapat diubah statusnya.');
+        }
+
+        // Handle cancellation (Dibatalkan)
+        if ($newStatus === 'dibatalkan') {
+            DB::beginTransaction();
+            try {
+                // Rollback stock if loaded from warehouse and not yet departed
+                if ($suratJalan->muat_dari_gudang && $oldStatus === 'persiapan') {
+                    $summary = StockSummary::first();
+                    $newWarehouseStock = $summary->stok_saat_ini + $suratJalan->jumlah_tabung;
+                    $summary->update(['stok_saat_ini' => $newWarehouseStock]);
+
+                    StockHistory::create([
+                        'tanggal' => now(),
+                        'jenis_transaksi' => 'surat_jalan',
+                        'referensi' => 'BATAL-' . $suratJalan->nomor_surat_jalan,
+                        'stok_masuk' => $suratJalan->jumlah_tabung,
+                        'stok_keluar' => 0,
+                        'stok_akhir' => $newWarehouseStock,
+                        'keterangan' => 'Pembatalan SJ (Kembali ke Gudang) #' . $suratJalan->nomor_surat_jalan,
+                    ]);
+
+                    $vStock = VehicleStock::where('truck_id', $suratJalan->truck_id)->first();
+                    if ($vStock) {
+                        $newVStock = $vStock->stok_saat_ini - $suratJalan->jumlah_tabung;
+                        $vStock->update(['stok_saat_ini' => $newVStock]);
+
+                        VehicleStockHistory::create([
+                            'tanggal' => now(),
+                            'truck_id' => $suratJalan->truck_id,
+                            'jenis_mutasi' => 'retur_gudang',
+                            'referensi' => 'BATAL-' . $suratJalan->nomor_surat_jalan,
+                            'stok_masuk' => 0,
+                            'stok_keluar' => $suratJalan->jumlah_tabung,
+                            'stok_akhir' => $newVStock,
+                            'keterangan' => 'Pembatalan SJ (Stok kembali ke gudang)',
+                        ]);
+                    }
+                }
+
+                $suratJalan->update(['status_perjalanan' => 'dibatalkan']);
+                DB::commit();
+                return back()->with('success', 'Status Surat Jalan berhasil diubah menjadi Dibatalkan.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return back()->with('error', 'Gagal mengubah status: ' . $e->getMessage());
+            }
+        }
+
+        // Handle other status changes
+        $suratJalan->update(['status_perjalanan' => $newStatus]);
+
+        $statusLabel = ucfirst(str_replace('_', ' ', $newStatus));
+        return back()->with('success', "Status Surat Jalan berhasil diubah menjadi {$statusLabel}.");
     }
 }

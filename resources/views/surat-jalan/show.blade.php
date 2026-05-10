@@ -14,14 +14,56 @@
                 <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 2H7V4h6v2zM9 14v2H7v-2h2zm2 2v-2h2v2h-2z" clip-rule="evenodd"/></svg>
                 Cetak SJ
             </a>
+            @if(Auth::user()->hasRole('supir_knek'))
+                <button onclick="downloadSJImage()" class="px-4 py-2 bg-pink-600 text-white text-sm font-bold rounded-lg hover:bg-pink-700 transition flex items-center shadow-lg shadow-pink-500/30">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Simpan Gambar
+                </button>
+            @else
+                <a href="{{ route('surat-jalan.download', $suratJalan) }}" class="px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition flex items-center shadow-lg shadow-emerald-500/30">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Download PDF
+                </a>
+            @endif
             @if($suratJalan->status_perjalanan != 'selesai')
                 @can('edit surat jalan')
-                <a href="{{ route('surat-jalan.edit', $suratJalan) }}" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-500/30">
-                    Edit Status
-                </a>
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 flex items-center">
+                        Update Status
+                        <svg class="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </button>
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                        <form action="{{ route('surat-jalan.update-status', $suratJalan) }}" method="POST">
+                            @csrf @method('PATCH')
+                            <div class="p-1.5 space-y-1">
+                                @if($suratJalan->status_perjalanan !== 'persiapan')
+                                <button type="submit" name="status_perjalanan" value="persiapan" class="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-lg transition">Persiapan</button>
+                                @endif
+                                @if($suratJalan->status_perjalanan !== 'berangkat')
+                                <button type="submit" name="status_perjalanan" value="berangkat" class="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-lg transition">Berangkat</button>
+                                @endif
+                                <button type="submit" name="status_perjalanan" value="selesai" class="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-lg transition">Selesai</button>
+                                <button type="submit" name="status_perjalanan" value="dibatalkan" class="w-full text-left px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition flex items-center" onclick="return confirm('Yakin ingin membatalkan SJ ini?')">Batalkan SJ</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
                 @endcan
             @endif
         </div>
+    </div>
+
+    {{-- Loading Overlay for Image Export --}}
+    <div id="download-loading" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center">
+        <div class="bg-white p-6 rounded-2xl shadow-xl flex items-center space-x-4">
+            <svg class="animate-spin h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span class="font-bold text-gray-800">Menyiapkan Gambar...</span>
+        </div>
+    </div>
+
+    {{-- Capture Area --}}
+    <div id="sj-capture-area" class="bg-white" style="position: fixed; left: 0; top: 0; opacity: 0.01; z-index: -1; pointer-events: none;">
+        @include('surat-jalan._print_content')
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -87,9 +129,6 @@
                                 <p class="text-xs text-gray-500 uppercase tracking-widest">{{ $suratJalan->truck->nama_truk }}</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-lg border border-emerald-100">KENDARAAN AKTIF</span>
-                        </div>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
@@ -98,9 +137,6 @@
                             @if($suratJalan->is_supir_tembak)
                                 <p class="text-sm font-bold text-amber-700">{{ $suratJalan->nama_supir_tembak }} <span class="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded ml-1 uppercase">Tembak</span></p>
                                 <p class="text-xs text-gray-500 mt-1"><span class="font-semibold">HP:</span> {{ $suratJalan->no_hp_supir_tembak }}</p>
-                                @if($suratJalan->alamat_supir_tembak)
-                                    <p class="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{{ $suratJalan->alamat_supir_tembak }}</p>
-                                @endif
                             @else
                                 <p class="text-sm font-bold text-gray-800">{{ $suratJalan->supir->nama ?? '-' }}</p>
                             @endif
@@ -109,7 +145,6 @@
                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Knek Pendamping</p>
                             @if($suratJalan->is_knek_tembak)
                                 <p class="text-sm font-bold text-amber-700">{{ $suratJalan->nama_knek_tembak }} <span class="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded ml-1 uppercase">Tembak</span></p>
-                                <p class="text-xs text-gray-500 mt-1"><span class="font-semibold">HP:</span> {{ $suratJalan->no_hp_knek_tembak }}</p>
                             @else
                                 <p class="text-sm font-bold text-gray-800">{{ $suratJalan->knek->nama ?? 'Tidak Ada' }}</p>
                             @endif
@@ -125,92 +160,99 @@
                 <div class="px-6 py-5 border-b border-gray-50 bg-gray-50/50">
                     <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Timeline Perjalanan</h3>
                 </div>
-                <div class="p-6">
-                    <div class="flow-root">
-                        <ul role="list" class="-mb-8">
-                            {{-- Step 1: Persiapan --}}
-                            <li>
-                                <div class="relative pb-8">
-                                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-indigo-200" aria-hidden="true"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center ring-8 ring-white">
-                                                <svg class="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                            </span>
-                                        </div>
-                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                            <div>
-                                                <p class="text-sm font-bold text-gray-900">Persiapan & Muat</p>
-                                                <p class="text-xs text-gray-500">Stok telah dipindahkan dari gudang ke truk.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-
-                            {{-- Step 2: Berangkat --}}
-                            <li>
-                                <div class="relative pb-8">
-                                    @if(in_array($suratJalan->status_perjalanan, ['selesai', 'retur']))
-                                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-indigo-200" aria-hidden="true"></span>
-                                    @endif
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            @if(in_array($suratJalan->status_perjalanan, ['berangkat', 'selesai', 'retur']))
-                                            <span class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center ring-8 ring-white">
-                                                <svg class="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                            </span>
-                                            @else
-                                            <span class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center ring-8 ring-white">
-                                                <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-                                            </span>
-                                            @endif
-                                        </div>
-                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                            <div>
-                                                <p class="text-sm font-bold {{ $suratJalan->status_perjalanan == 'berangkat' ? 'text-indigo-600' : 'text-gray-400' }}">Berangkat</p>
-                                                <p class="text-xs text-gray-500">Truk telah meninggalkan pangkalan.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-
-                            {{-- Step 3: Selesai / Retur --}}
-                            <li>
-                                <div class="relative pb-8">
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            @if($suratJalan->status_perjalanan == 'selesai')
-                                            <span class="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center ring-8 ring-white">
-                                                <svg class="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                            </span>
-                                            @elseif($suratJalan->status_perjalanan == 'retur')
-                                            <span class="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center ring-8 ring-white">
-                                                <svg class="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                                            </span>
-                                            @else
-                                            <span class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center ring-8 ring-white">
-                                                <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-                                            </span>
-                                            @endif
-                                        </div>
-                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                            <div>
-                                                <p class="text-sm font-bold {{ in_array($suratJalan->status_perjalanan, ['selesai', 'retur']) ? ($suratJalan->status_perjalanan == 'selesai' ? 'text-emerald-600' : 'text-red-600') : 'text-gray-400' }}">
-                                                    {{ $suratJalan->status_perjalanan == 'retur' ? 'Selesai (Retur)' : 'Selesai / Terkirim' }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">Seluruh tabung telah didistribusikan / diproses.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="p-6 text-sm">
+                    <ul class="space-y-4">
+                        <li class="flex items-center space-x-3">
+                            <div class="w-2 h-2 rounded-full bg-indigo-600"></div>
+                            <span class="font-bold">Persiapan</span>
+                        </li>
+                        <li class="flex items-center space-x-3 {{ in_array($suratJalan->status_perjalanan, ['berangkat', 'selesai', 'retur']) ? 'opacity-100' : 'opacity-30' }}">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span class="font-bold">Berangkat</span>
+                        </li>
+                        <li class="flex items-center space-x-3 {{ in_array($suratJalan->status_perjalanan, ['selesai', 'retur']) ? 'opacity-100' : 'opacity-30' }}">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <span class="font-bold">Selesai</span>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('extra_js')
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+    function downloadSJImage() {
+        if (typeof html2canvas === 'undefined') {
+            alert('Library gambar belum siap. Silakan tunggu sebentar dan coba lagi.');
+            return;
+        }
+
+        const loader = document.getElementById('download-loading');
+        const captureArea = document.getElementById('sj-capture-area');
+        if (!captureArea || !loader) return;
+        
+        loader.classList.remove('hidden');
+
+        // Create a hidden iframe for isolation
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.left = '-9999px';
+        iframe.style.width = '850px'; // Slightly wider than capture container
+        iframe.style.height = '1200px';
+        document.body.appendChild(iframe);
+
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { margin: 0; padding: 0; background: white; }
+                </style>
+            </head>
+            <body>
+                ${captureArea.innerHTML}
+            </body>
+            </html>
+        `);
+        iframeDoc.close();
+
+        // Wait for iframe to render
+        setTimeout(() => {
+            const target = iframeDoc.getElementById('capture-container');
+            html2canvas(target || iframeDoc.body, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'SJ-{{ $suratJalan->nomor_surat_jalan }}.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                document.body.removeChild(iframe);
+                loader.classList.add('hidden');
+            }).catch(err => {
+                console.error('Image capture failed:', err);
+                document.body.removeChild(iframe);
+                loader.classList.add('hidden');
+                alert('Gagal mengambil gambar. Detail: ' + err.message);
+            });
+        }, 500);
+    }
+
+    window.addEventListener('load', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('download_image') === '1') {
+            setTimeout(downloadSJImage, 1000);
+        }
+    });
+</script>
 @endsection

@@ -38,15 +38,16 @@ class TruckController extends Controller
         return view('master-data.truck.index', compact('trucks', 'search', 'status'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreTruckRequest $request)
     {
-        Truck::create($request->validated());
+        $validated = $request->validated();
+        
+        foreach ($validated['trucks'] as $truckData) {
+            Truck::create($truckData);
+        }
 
         return redirect()->route('truck.index')
-                        ->with('success', 'Truk berhasil ditambahkan');
+                        ->with('success', count($validated['trucks']) . ' Truk berhasil ditambahkan');
     }
 
     /**

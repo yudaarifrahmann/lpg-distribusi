@@ -16,9 +16,13 @@ class UserManagementController extends Controller
         $roles = Role::orderBy('name')->get();
 
         $query = User::query()
-            ->with('roles')
+            ->with(['roles', 'branch'])
             ->withCount('driver')
             ->latest();
+
+        if (auth()->check() && !auth()->user()->hasRole('superadmin') && auth()->user()->branch_id) {
+            $query->where('branch_id', auth()->user()->branch_id);
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -43,31 +47,48 @@ class UserManagementController extends Controller
         abort_unless(auth()->user()->can('create user'), 403);
 
         $roles = Role::orderBy('name')->get();
+        $branches = \App\Models\Branch::orderBy('name')->get();
 
-        return view('user-management.create', compact('roles'));
+        return view('user-management.create', compact('roles', 'branches'));
     }
 
     public function store(Request $request)
     {
         abort_unless(auth()->user()->can('create user'), 403);
 
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|exists:roles,name',
+        $validated = $request->validate([
+            'users' => 'required|array|min:1',
+            'users.*.name' => 'required|string|max:255',
+            'users.*.email' => 'required|email|max:255|unique:users,email',
+            'users.*.password' => 'required|string|min:8|confirmed',
+            'users.*.role' => 'required|exists:roles,name',
+            'users.*.branch_id' => 'nullable|exists:branches,id',
+        ], [
+            'users.*.name.required' => 'Nama wajib diisi',
+            'users.*.email.required' => 'Email wajib diisi',
+            'users.*.email.unique' => 'Email sudah digunakan',
+            'users.*.password.required' => 'Password wajib diisi',
+            'users.*.password.confirmed' => 'Konfirmasi password tidak cocok',
+            'users.*.role.required' => 'Role wajib dipilih',
         ]);
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        foreach ($validated['users'] as $data) {
+            if (!auth()->user()->hasRole('superadmin') && auth()->user()->branch_id) {
+                $data['branch_id'] = auth()->user()->branch_id;
+            }
 
-        $user->assignRole($data['role']);
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'branch_id' => $data['branch_id'] ?? null,
+            ]);
+
+            $user->assignRole($data['role']);
+        }
 
         return redirect()->route('user-management.index')
-            ->with('success', 'User berhasil ditambahkan.');
+            ->with('success', count($validated['users']) . ' User berhasil ditambahkan.');
     }
 
     public function edit(User $user)
@@ -75,9 +96,10 @@ class UserManagementController extends Controller
         abort_unless(auth()->user()->can('edit user'), 403);
 
         $roles = Role::orderBy('name')->get();
+        $branches = \App\Models\Branch::orderBy('name')->get();
         $user->load('roles');
 
-        return view('user-management.edit', compact('user', 'roles'));
+        return view('user-management.edit', compact('user', 'roles', 'branches'));
     }
 
     public function update(Request $request, User $user)
@@ -94,11 +116,17 @@ class UserManagementController extends Controller
             ],
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
+
+        if (!auth()->user()->hasRole('superadmin') && auth()->user()->branch_id) {
+            $data['branch_id'] = auth()->user()->branch_id;
+        }
 
         $user->fill([
             'name' => $data['name'],
             'email' => $data['email'],
+            'branch_id' => $data['branch_id'] ?? null,
         ]);
 
         if (!empty($data['password'])) {

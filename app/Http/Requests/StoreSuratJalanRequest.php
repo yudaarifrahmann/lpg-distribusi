@@ -25,7 +25,7 @@ class StoreSuratJalanRequest extends FormRequest
             'nomor_surat_jalan' => 'required|string|unique:surat_jalans,nomor_surat_jalan',
             'tanggal_berangkat' => 'required|date',
             'penebusan_id' => 'nullable|exists:penebusans,id',
-            'truck_id' => 'required|exists:trucks,id',
+            'truck_id' => 'nullable|exists:trucks,id',
             'driver_id' => 'required', // Can be ID or 'tembak'
             'knek_id' => 'nullable', // Can be ID or 'tembak'
             'jumlah_tabung' => 'required|integer|min:1',

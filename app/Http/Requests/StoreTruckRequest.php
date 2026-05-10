@@ -23,22 +23,23 @@ class StoreTruckRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_truk' => 'required|string|max:255',
-            'nomor_polisi' => 'required|string|max:50|unique:trucks,nomor_polisi',
-            'kapasitas_tabung' => 'required|integer|min:1',
-            'status_kendaraan' => 'required|in:aktif,service,nonaktif',
+            'trucks' => 'required|array|min:1',
+            'trucks.*.nama_truk' => 'required|string|max:255',
+            'trucks.*.nomor_polisi' => 'required|string|max:50|unique:trucks,nomor_polisi',
+            'trucks.*.kapasitas_tabung' => 'required|integer|min:1',
+            'trucks.*.status_kendaraan' => 'required|in:aktif,service,nonaktif',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'nama_truk.required' => 'Nama truk wajib diisi',
-            'nomor_polisi.required' => 'Nomor polisi wajib diisi',
-            'nomor_polisi.unique' => 'Nomor polisi sudah terdaftar',
-            'kapasitas_tabung.required' => 'Kapasitas tabung wajib diisi',
-            'kapasitas_tabung.integer' => 'Kapasitas harus berupa angka',
-            'status_kendaraan.required' => 'Status kendaraan wajib dipilih',
+            'trucks.*.nama_truk.required' => 'Nama truk wajib diisi',
+            'trucks.*.nomor_polisi.required' => 'Nomor polisi wajib diisi',
+            'trucks.*.nomor_polisi.unique' => 'Nomor polisi sudah terdaftar',
+            'trucks.*.kapasitas_tabung.required' => 'Kapasitas tabung wajib diisi',
+            'trucks.*.kapasitas_tabung.integer' => 'Kapasitas harus berupa angka',
+            'trucks.*.status_kendaraan.required' => 'Status kendaraan wajib dipilih',
         ];
     }
 }

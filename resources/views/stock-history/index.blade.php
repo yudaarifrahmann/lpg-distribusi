@@ -70,7 +70,7 @@
                                     @endif
                                     <span class="text-[10px] font-bold text-gray-400">Stok Akhir: {{ $mut->stok_akhir }}</span>
                                 </div>
-                                <time class="block text-[10px] text-gray-400 mt-1">{{ $mut->tanggal->format('d/m/Y H:i') }}</time>
+                                <time class="block text-[10px] text-gray-400 mt-1">{{ \Carbon\Carbon::parse($mut->tanggal)->format('d/m/Y H:i') }}</time>
                             </div>
                         </div>
                     </div>
