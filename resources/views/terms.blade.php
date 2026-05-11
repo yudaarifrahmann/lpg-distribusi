@@ -99,12 +99,16 @@
     </main>
 
     {{-- Footer --}}
-    <footer class="py-20 border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-            <div class="mb-8">
-                <span class="text-2xl font-black text-slate-900 uppercase">LPG <span class="text-blue-600">Distrib</span></span>
+    <footer class="py-12 bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-5 lg:px-8 flex flex-col md:flex-row justify-between gap-6">
+            <div>
+                <p class="text-xl font-black text-slate-950">{{ $settings['site_name'] ?? 'LPG Distrib' }}</p>
+                <p class="text-sm text-slate-500 mt-2">Sistem manajemen distribusi untuk agen LPG.</p>
             </div>
-            <p class="text-slate-400 text-sm mb-8">&copy; 2026 LPG Distribution Management System. All rights reserved.</p>
+            <div class="flex items-center gap-5 text-xs font-bold text-slate-500 uppercase">
+                <a href="{{ route('terms') }}" class="hover:text-teal-700 transition">Syarat & Ketentuan</a>
+                <span>&copy; 2026</span>
+            </div>
         </div>
     </footer>
 

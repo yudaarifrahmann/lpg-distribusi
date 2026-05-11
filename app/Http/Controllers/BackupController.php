@@ -18,11 +18,9 @@ class BackupController extends Controller
     public function create()
     {
         $filename = "backup-" . now()->format('Y-m-d-His') . ".sql";
-        $path = storage_path('app/backups/' . $filename);
+        $path = Storage::disk('local')->path('backups/' . $filename);
 
-        if (!is_dir(storage_path('app/backups'))) {
-            mkdir(storage_path('app/backups'), 0755, true);
-        }
+        Storage::disk('local')->makeDirectory('backups');
 
         $command = sprintf(
             'mysqldump --user=%s --password=%s --host=%s %s > %s',
@@ -42,7 +40,7 @@ class BackupController extends Controller
 
     public function download($filename)
     {
-        return response()->download(storage_path('app/backups/' . $filename));
+        return response()->download(Storage::disk('local')->path('backups/' . $filename));
     }
 
     public function destroy($filename)

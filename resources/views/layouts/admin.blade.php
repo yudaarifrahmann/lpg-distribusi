@@ -14,7 +14,11 @@
     @yield('extra_css')
 </head>
 <body class="bg-gray-50 font-sans antialiased">
-    <div class="flex h-screen" x-data="{ sidebarOpen: true, masterDataOpen: {{ request()->is('master-data/*') ? 'true' : 'false' }}, reportOpen: {{ request()->is('laporan/*') ? 'true' : 'false' }} }">
+    @php
+        $appName = \App\Models\AppSetting::getValue('site_name', 'LPG Distrib');
+        $appLogo = \App\Models\AppSetting::getValue('logo_path');
+    @endphp
+    <div class="flex h-screen" x-data="{ sidebarOpen: true, masterDataOpen: {{ request()->is('master-data/*') ? 'true' : 'false' }}, reportOpen: {{ request()->is('laporan/*') ? 'true' : 'false' }}, settingsOpen: {{ request()->is('settings/*') ? 'true' : 'false' }} }">
 
         {{-- Overlay for mobile --}}
         <div x-show="sidebarOpen" @click="sidebarOpen = false"
@@ -27,10 +31,14 @@
             {{-- Logo --}}
             <div class="p-5 border-b border-gray-800">
                 <h1 class="text-xl font-bold flex items-center">
-                    <span class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-1.945-1.164c-.143-.225-.35-.373-.572-.444a1 1 0 00-1.287.8 3.007 3.007 0 00-.164 1.084c.058 1.233.662 2.342 1.593 3.11.525.434 1.156.753 1.826.927a6.02 6.02 0 002.75.09c.925-.196 1.79-.673 2.456-1.37.726-.762 1.19-1.753 1.292-2.882a5.01 5.01 0 00-.49-2.678c-.293-.556-.674-1.047-1.063-1.468a13.372 13.372 0 00-.964-.94c.067-.434.144-.872.233-1.29.178-.84.388-1.59.604-2.166.11-.293.214-.538.302-.712a2.38 2.38 0 01.082-.134z"/></svg>
+                    <span class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg overflow-hidden">
+                        @if($appLogo)
+                            <img src="{{ asset('storage/' . $appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain bg-white p-1">
+                        @else
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-1.945-1.164c-.143-.225-.35-.373-.572-.444a1 1 0 00-1.287.8 3.007 3.007 0 00-.164 1.084c.058 1.233.662 2.342 1.593 3.11.525.434 1.156.753 1.826.927a6.02 6.02 0 002.75.09c.925-.196 1.79-.673 2.456-1.37.726-.762 1.19-1.753 1.292-2.882a5.01 5.01 0 00-.49-2.678c-.293-.556-.674-1.047-1.063-1.468a13.372 13.372 0 00-.964-.94c.067-.434.144-.872.233-1.29.178-.84.388-1.59.604-2.166.11-.293.214-.538.302-.712a2.38 2.38 0 01.082-.134z"/></svg>
+                        @endif
                     </span>
-                    <span class="text-blue-500">LPG Distrib</span>
+                    <span class="text-blue-500 truncate">{{ $appName }}</span>
                 </h1>
             </div>
 
@@ -209,11 +217,27 @@
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                     Audit Log
                 </a>
-                <a href="{{ route('backup.index') }}" class="sidebar-link {{ request()->routeIs('backup.*') ? 'active' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-                    Backup Data
-                </a>
                 @endcan
+
+                @role('superadmin')
+                <div>
+                    <button @click="settingsOpen = !settingsOpen" class="sidebar-link w-full justify-between {{ request()->is('settings/*') ? 'text-blue-400' : '' }}">
+                        <span class="flex items-center">
+                            <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+                            Pengaturan
+                        </span>
+                        <svg class="w-4 h-4 transform transition-transform duration-200" :class="{ 'rotate-180': settingsOpen }" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </button>
+                    <div x-show="settingsOpen" x-collapse class="ml-4 mt-1 space-y-1 border-l-2 border-gray-700 pl-3">
+                        <a href="{{ route('settings.landing.edit') }}" class="sidebar-link text-xs {{ request()->routeIs('settings.landing.*') ? 'active' : '' }}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-3 {{ request()->routeIs('settings.landing.*') ? 'bg-white' : 'bg-gray-600' }}"></span>Landing Page
+                        </a>
+                        <a href="{{ route('backup.index') }}" class="sidebar-link text-xs {{ request()->routeIs('backup.*') ? 'active' : '' }}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-3 {{ request()->routeIs('backup.*') ? 'bg-white' : 'bg-gray-600' }}"></span>Backup Data
+                        </a>
+                    </div>
+                </div>
+                @endrole
             </nav>
 
             {{-- Logout --}}

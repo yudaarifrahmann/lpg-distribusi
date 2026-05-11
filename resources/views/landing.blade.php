@@ -3,164 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LPG Distrib - Sistem Manajemen Distribusi Terpadu</title>
+    <title>{{ $settings['site_name'] }} - Agen LPG</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
-        .bg-mesh {
-            background-color: #ffffff;
-            background-image: radial-gradient(at 0% 0%, hsla(210,100%,95%,1) 0, transparent 50%), 
-                              radial-gradient(at 100% 100%, hsla(220,100%,95%,1) 0, transparent 50%);
+        .hero-pattern {
+            background-color: #f8fafc;
+            background-image:
+                linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+        .cylinder {
+            width: 120px;
+            height: 178px;
+            border-radius: 28px 28px 34px 34px;
+            background: linear-gradient(135deg, #14b8a6 0%, #0f766e 55%, #115e59 100%);
+            box-shadow: inset -18px 0 24px rgba(15, 23, 42, 0.18), 0 24px 60px rgba(15, 23, 42, 0.18);
+            position: relative;
+        }
+        .cylinder:before {
+            content: "";
+            position: absolute;
+            left: 31px;
+            top: -28px;
+            width: 58px;
+            height: 42px;
+            border: 12px solid #0f766e;
+            border-bottom: 0;
+            border-radius: 20px 20px 0 0;
+            background: transparent;
+        }
+        .cylinder:after {
+            content: "LPG";
+            position: absolute;
+            left: 22px;
+            right: 22px;
+            top: 70px;
+            padding: 8px 0;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #0f766e;
+            font-size: 20px;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 0;
         }
     </style>
 </head>
-<body class="bg-mesh text-slate-900 overflow-x-hidden">
+<body class="bg-slate-50 text-slate-900 overflow-x-hidden">
+    @php
+        $logoPath = $settings['logo_path'] ?? null;
+    @endphp
 
-    {{-- Navigation --}}
-    <nav class="fixed w-full z-50 glass border-b border-slate-200/50">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-1.945-1.164c-.143-.225-.35-.373-.572-.444a1 1 0 00-1.287.8 3.007 3.007 0 00-.164 1.084c.058 1.233.662 2.342 1.593 3.11.525.434 1.156.753 1.826.927a6.02 6.02 0 002.75.09c.925-.196 1.79-.673 2.456-1.37.726-.762 1.19-1.753 1.292-2.882a5.01 5.01 0 00-.49-2.678c-.293-.556-.674-1.047-1.063-1.468a13.372 13.372 0 00-.964-.94c.067-.434.144-.872.233-1.29.178-.84.388-1.59.604-2.166.11-.293.214-.538.302-.712a2.38 2.38 0 01.082-.134z"/></svg>
-                    </div>
-                    <span class="text-xl font-extrabold tracking-tight text-slate-900 uppercase">LPG <span class="text-blue-600">Distrib</span></span>
+    <nav class="fixed w-full z-50 bg-white/95 backdrop-blur border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-5 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <a href="/" class="flex items-center gap-3 min-w-0">
+                    <span class="w-10 h-10 rounded-xl bg-teal-700 flex items-center justify-center overflow-hidden shrink-0">
+                        @if($logoPath)
+                            <img src="{{ asset('storage/' . $logoPath) }}" alt="{{ $settings['site_name'] }}" class="w-full h-full object-contain bg-white p-1">
+                        @else
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-1.945-1.164c-.143-.225-.35-.373-.572-.444a1 1 0 00-1.287.8 3.007 3.007 0 00-.164 1.084c.058 1.233.662 2.342 1.593 3.11.525.434 1.156.753 1.826.927a6.02 6.02 0 002.75.09c.925-.196 1.79-.673 2.456-1.37.726-.762 1.19-1.753 1.292-2.882a5.01 5.01 0 00-.49-2.678c-.293-.556-.674-1.047-1.063-1.468a13.372 13.372 0 00-.964-.94c.067-.434.144-.872.233-1.29.178-.84.388-1.59.604-2.166.11-.293.214-.538.302-.712a2.38 2.38 0 01.082-.134z"/></svg>
+                        @endif
+                    </span>
+                    <span class="font-extrabold text-slate-900 truncate">{{ $settings['site_name'] }}</span>
+                </a>
+
+                <div class="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
+                    <a href="#layanan" class="hover:text-teal-700 transition">Layanan</a>
+                    <a href="#alur" class="hover:text-teal-700 transition">Alur Agen</a>
+                    <a href="#kontak" class="hover:text-teal-700 transition">Kontak</a>
                 </div>
-                <div class="hidden md:flex items-center space-x-10 text-sm font-semibold text-slate-600 uppercase tracking-widest">
-                    <a href="#features" class="hover:text-blue-600 transition">Fitur</a>
-                    <a href="#stats" class="hover:text-blue-600 transition">Statistik</a>
-                    <a href="#about" class="hover:text-blue-600 transition">Tentang</a>
-                </div>
-                <div>
-                    @auth
-                    <a href="{{ route('dashboard') }}" class="px-6 py-3 bg-slate-900 text-white rounded-full text-sm font-bold shadow-xl hover:bg-black transition-all">Dashboard</a>
-                    @else
-                    <a href="{{ route('login') }}" class="px-8 py-3 bg-blue-600 text-white rounded-full text-sm font-bold shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all">Masuk Sistem</a>
-                    @endauth
-                </div>
+
+                @auth
+                    <a href="{{ route('dashboard') }}" class="px-5 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-black transition">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="px-5 py-2.5 bg-teal-700 text-white rounded-lg text-sm font-bold hover:bg-teal-800 transition">{{ $settings['landing_primary_button'] }}</a>
+                @endauth
             </div>
         </div>
     </nav>
 
-    {{-- Hero Section --}}
-    <header class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">
-        <div class="max-w-7xl mx-auto text-center">
-            <div class="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-[10px] font-black uppercase tracking-widest mb-8 border border-blue-100 animate-pulse">
-                Terintegrasi Dengan Laravel 12
-            </div>
-            <h1 class="text-5xl lg:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight mb-8">
-                Optimalkan Distribusi LPG <br> 
-                <span class="text-blue-600">Lebih Cepat & Transparan.</span>
-            </h1>
-            <p class="max-w-2xl mx-auto text-lg text-slate-500 leading-relaxed mb-12">
-                Sistem manajemen distribusi LPG paling modern untuk membantu agen mengelola stok gudang, penjualan pangkalan, hingga piutang dalam satu dashboard terpusat.
-            </p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="{{ route('login') }}" class="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-2xl font-bold shadow-2xl shadow-blue-500/40 hover:scale-105 transition-all">Mulai Sekarang</a>
-                <a href="#features" class="w-full sm:w-auto px-10 py-5 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all">Lihat Fitur</a>
-            </div>
-        </div>
+    <header class="hero-pattern pt-28 lg:pt-32">
+        <div class="max-w-7xl mx-auto px-5 lg:px-8 pb-16 lg:pb-20">
+            <div class="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-teal-100 text-teal-800 rounded-lg text-xs font-extrabold uppercase">
+                        <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                        {{ $settings['landing_badge'] }}
+                    </div>
+                    <h1 class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-black leading-tight text-slate-950">
+                        {{ $settings['landing_title'] }}
+                    </h1>
+                    <p class="mt-6 max-w-2xl text-base lg:text-lg text-slate-600 leading-relaxed">
+                        {{ $settings['landing_subtitle'] }}
+                    </p>
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="px-7 py-4 bg-teal-700 text-white rounded-xl font-bold text-center hover:bg-teal-800 transition">Buka Dashboard</a>
+                        @else
+                            <a href="{{ route('login') }}" class="px-7 py-4 bg-teal-700 text-white rounded-xl font-bold text-center hover:bg-teal-800 transition">{{ $settings['landing_primary_button'] }}</a>
+                        @endauth
+                        <a href="#layanan" class="px-7 py-4 bg-white text-slate-800 border border-slate-200 rounded-xl font-bold text-center hover:bg-slate-100 transition">{{ $settings['landing_secondary_button'] }}</a>
+                    </div>
+                </div>
 
-        {{-- Floating UI Element --}}
-        <div class="mt-20 relative max-w-5xl mx-auto">
-            <div class="bg-white p-4 rounded-3xl shadow-[0_40px_100px_-15px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden">
-                <div class="bg-slate-50 rounded-2xl h-[400px] lg:h-[500px] flex items-center justify-center relative overflow-hidden">
-                    <div class="absolute inset-0 bg-blue-500/10"></div>
-                    <div class="relative text-center p-8">
-                        <div class="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <div class="relative">
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-xl p-5 lg:p-6">
+                        <div class="bg-slate-100 rounded-xl p-5 min-h-[360px] flex flex-col justify-between">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-xs font-black text-slate-500 uppercase">Gudang Agen LPG</p>
+                                    <h2 class="text-2xl font-black text-slate-950 mt-1">Operasional Hari Ini</h2>
+                                </div>
+                                <span class="px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-black">Aktif</span>
+                            </div>
+
+                            <div class="grid grid-cols-[auto_1fr] gap-6 items-center my-8">
+                                <div class="flex justify-center">
+                                    <div class="cylinder"></div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white border border-slate-200 rounded-xl p-4">
+                                        <p class="text-xs text-slate-500 font-bold">Stok Gudang</p>
+                                        <p class="text-2xl font-black text-slate-950 mt-1">Terkontrol</p>
+                                    </div>
+                                    <div class="bg-white border border-slate-200 rounded-xl p-4">
+                                        <p class="text-xs text-slate-500 font-bold">Surat Jalan</p>
+                                        <p class="text-2xl font-black text-slate-950 mt-1">Siap Kirim</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="bg-white border border-slate-200 rounded-xl p-3">
+                                    <p class="text-[11px] text-slate-500 font-bold">DO</p>
+                                    <p class="text-lg font-black text-teal-700">Masuk</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 rounded-xl p-3">
+                                    <p class="text-[11px] text-slate-500 font-bold">Armada</p>
+                                    <p class="text-lg font-black text-teal-700">Jalan</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 rounded-xl p-3">
+                                    <p class="text-[11px] text-slate-500 font-bold">Piutang</p>
+                                    <p class="text-lg font-black text-teal-700">Pantau</p>
+                                </div>
+                            </div>
                         </div>
-                        <h4 class="text-2xl font-bold text-slate-800 mb-2">Dashboard Statistik Interaktif</h4>
-                        <p class="text-slate-500 text-sm max-w-md mx-auto">Pantau grafik penjualan harian, tren laba rugi, dan pergerakan stok secara real-time dari manapun.</p>
                     </div>
                 </div>
             </div>
         </div>
     </header>
 
-    {{-- Features Section --}}
-    <section id="features" class="py-32 bg-white">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8">
-            <div class="text-center mb-20">
-                <h4 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-4">Solusi Menyeluruh</h4>
-                <h2 class="text-4xl lg:text-5xl font-black text-slate-900">Alur Kerja yang Modern</h2>
+    <section id="layanan" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-5 lg:px-8">
+            <div class="max-w-2xl">
+                <p class="text-xs font-black text-teal-700 uppercase tracking-widest">Layanan Operasional</p>
+                <h2 class="text-3xl lg:text-4xl font-black text-slate-950 mt-3">Dibuat untuk ritme kerja agen LPG.</h2>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-                {{-- Feature 1 --}}
-                <div class="group">
-                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            <div class="grid md:grid-cols-3 gap-5 mt-10">
+                @for($i = 1; $i <= 3; $i++)
+                    <div class="border border-slate-200 rounded-xl p-6 bg-white">
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center mb-5">
+                            @if($i === 1)
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            @elseif($i === 2)
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4v11m9 0h2m-2 0h-2m2 0V9h3l3 4v3h-2"/></svg>
+                            @else
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            @endif
+                        </div>
+                        <h3 class="text-lg font-black text-slate-950">{{ $settings['landing_feature_' . $i . '_title'] }}</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed mt-3">{{ $settings['landing_feature_' . $i . '_body'] }}</p>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-4 uppercase tracking-tighter">Stok Real-time</h3>
-                    <p class="text-slate-500 leading-relaxed text-sm">Sinkronisasi stok gudang dan kendaraan pengirim secara instan. Tidak ada lagi selisih data.</p>
-                </div>
+                @endfor
+            </div>
+        </div>
+    </section>
 
-                {{-- Feature 2 --}}
-                <div class="group">
-                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-4 uppercase tracking-tighter">Manajemen Piutang</h3>
-                    <p class="text-slate-500 leading-relaxed text-sm">Pantau pembayaran pangkalan dengan sistem cicilan terintegrasi dan notifikasi jatuh tempo.</p>
+    <section id="alur" class="py-20 bg-slate-950 text-white">
+        <div class="max-w-7xl mx-auto px-5 lg:px-8">
+            <div class="grid lg:grid-cols-[0.8fr_1.2fr] gap-10 items-start">
+                <div>
+                    <p class="text-xs font-black text-teal-300 uppercase tracking-widest">Alur Agen</p>
+                    <h2 class="text-3xl lg:text-4xl font-black mt-3">Dari DO sampai rekap penjualan.</h2>
+                    <p class="text-slate-300 text-sm leading-relaxed mt-5">Landing page ini menonjolkan proses nyata agen LPG: penebusan, stok gudang, pengiriman ke pangkalan, retur tabung, pembayaran, dan laporan.</p>
                 </div>
-
-                {{-- Feature 3 --}}
-                <div class="group">
-                    <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-4 uppercase tracking-tighter">Laporan Audit</h3>
-                    <p class="text-slate-500 leading-relaxed text-sm">Laporan laba rugi, rekap penjualan, dan audit log yang transparan dan siap untuk audit.</p>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    @for($i = 1; $i <= 4; $i++)
+                        <div class="border border-white/10 bg-white/5 rounded-xl p-5">
+                            <p class="text-2xl font-black text-white">{{ $settings['landing_stat_' . $i . '_value'] }}</p>
+                            <p class="text-xs font-bold text-teal-200 mt-2 uppercase">{{ $settings['landing_stat_' . $i . '_label'] }}</p>
+                        </div>
+                    @endfor
                 </div>
             </div>
         </div>
     </section>
 
-    {{-- Stats Section --}}
-    <section id="stats" class="py-24 bg-slate-900 text-white relative overflow-hidden">
-        <div class="absolute inset-0 opacity-10">
-            <div class="absolute top-0 left-0 w-96 h-96 bg-blue-600 rounded-full blur-[100px]"></div>
-            <div class="absolute bottom-0 right-0 w-96 h-96 bg-indigo-600 rounded-full blur-[100px]"></div>
-        </div>
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
-                <div>
-                    <h2 class="text-5xl font-black mb-2 tracking-tighter">100%</h2>
-                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em]">Akurasi Stok</p>
-                </div>
-                <div>
-                    <h2 class="text-5xl font-black mb-2 tracking-tighter">24/7</h2>
-                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em]">Akses Sistem</p>
-                </div>
-                <div>
-                    <h2 class="text-5xl font-black mb-2 tracking-tighter">Auto</h2>
-                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em]">Pencadangan Data</p>
-                </div>
-                <div>
-                    <h2 class="text-5xl font-black mb-2 tracking-tighter">Push</h2>
-                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em]">Notifikasi Realtime</p>
-                </div>
+    <footer id="kontak" class="py-12 bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-5 lg:px-8 flex flex-col md:flex-row justify-between gap-6">
+            <div>
+                <p class="text-xl font-black text-slate-950">{{ $settings['site_name'] }}</p>
+                <p class="text-sm text-slate-500 mt-2">Sistem manajemen distribusi untuk agen LPG.</p>
             </div>
-        </div>
-    </section>
-
-    {{-- Footer --}}
-    <footer class="py-20 border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-            <div class="mb-8">
-                <span class="text-2xl font-black text-slate-900 uppercase">LPG <span class="text-blue-600">Distrib</span></span>
-            </div>
-            <p class="text-slate-400 text-sm mb-8">&copy; 2026 LPG Distribution Management System. All rights reserved.</p>
-            <div class="flex justify-center space-x-6">
-                <a href="#" class="text-slate-400 hover:text-blue-600 transition text-[10px] font-bold uppercase tracking-widest">Kebijakan Privasi</a>
-                <a href="{{ route('terms') }}" class="text-slate-400 hover:text-blue-600 transition text-[10px] font-bold uppercase tracking-widest">Syarat & Ketentuan</a>
+            <div class="flex items-center gap-5 text-xs font-bold text-slate-500 uppercase">
+                <a href="{{ route('terms') }}" class="hover:text-teal-700 transition">Syarat & Ketentuan</a>
+                <span>&copy; 2026</span>
             </div>
         </div>
     </footer>
-
 </body>
 </html>

@@ -22,13 +22,16 @@ use App\Http\Controllers\StockHistoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\AppSettingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 // Landing Page
 Route::get('/', function () {
-    return view('landing');
+    return view('landing', [
+        'settings' => \App\Models\AppSetting::landingValues(),
+    ]);
 });
 
 Route::get('/syarat-ketentuan', function () {
@@ -105,11 +108,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
-    // Backup & Settings
-    Route::get('/settings/backup', [BackupController::class, 'index'])->name('backup.index');
-    Route::post('/settings/backup', [BackupController::class, 'create'])->name('backup.create');
-    Route::get('/settings/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
-    Route::delete('/settings/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
+    // Settings
+    Route::middleware('role:superadmin')->prefix('settings')->group(function () {
+        Route::get('/landing', [AppSettingController::class, 'edit'])->name('settings.landing.edit');
+        Route::put('/landing', [AppSettingController::class, 'update'])->name('settings.landing.update');
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::post('/backup', [BackupController::class, 'create'])->name('backup.create');
+        Route::get('/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
+        Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
+    });
 
     // Laporan
     Route::middleware('can:view laporan')->prefix('laporan')->group(function () {
