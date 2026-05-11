@@ -99,7 +99,7 @@
                     <span class="font-black text-blue-600">{{ $p->total }} Pcs</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-2">
-                    <div class="bg-gradient-to-r from-blue-500 to-blue-300 h-2 rounded-full" style="width: {{ ($p->total / max($topPangkalan->pluck('total')->toArray() ?: [1])) * 100 }}%"></div>
+                    <div class="bg-blue-500 h-2 rounded-full" style="width: {{ ($p->total / max($topPangkalan->pluck('total')->toArray() ?: [1])) * 100 }}%"></div>
                 </div>
             </div>
             @endforeach

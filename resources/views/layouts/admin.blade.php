@@ -27,17 +27,17 @@
             {{-- Logo --}}
             <div class="p-5 border-b border-gray-800">
                 <h1 class="text-xl font-bold flex items-center">
-                    <span class="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                    <span class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg">
                         <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-1.945-1.164c-.143-.225-.35-.373-.572-.444a1 1 0 00-1.287.8 3.007 3.007 0 00-.164 1.084c.058 1.233.662 2.342 1.593 3.11.525.434 1.156.753 1.826.927a6.02 6.02 0 002.75.09c.925-.196 1.79-.673 2.456-1.37.726-.762 1.19-1.753 1.292-2.882a5.01 5.01 0 00-.49-2.678c-.293-.556-.674-1.047-1.063-1.468a13.372 13.372 0 00-.964-.94c.067-.434.144-.872.233-1.29.178-.84.388-1.59.604-2.166.11-.293.214-.538.302-.712a2.38 2.38 0 01.082-.134z"/></svg>
                     </span>
-                    <span class="bg-gradient-to-r from-blue-400 to-blue-200 bg-clip-text text-transparent">LPG Distrib</span>
+                    <span class="text-blue-500">LPG Distrib</span>
                 </h1>
             </div>
 
             {{-- User Info --}}
             <div class="p-4 border-b border-gray-800">
                 <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
                         {{ substr(Auth::user()->name, 0, 1) }}
                     </div>
                     <div class="ml-3">
@@ -246,7 +246,7 @@
                             <div class="relative" x-data="{ profileOpen: false }">
                                 <button @click="profileOpen = !profileOpen" class="flex items-center text-sm border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition">
                                     <div class="relative mr-2">
-                                        <div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                                        <div class="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                                             {{ substr(Auth::user()->name, 0, 1) }}
                                         </div>
                                         @if(Auth::user()->unreadNotifications->count() > 0)

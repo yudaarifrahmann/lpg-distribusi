@@ -70,7 +70,7 @@
         {{-- Left Column: Main Details --}}
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-8 py-6 bg-gradient-to-r from-indigo-700 to-indigo-600 text-white">
+                <div class="px-8 py-6 bg-indigo-600 text-white">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-indigo-100 text-xs font-bold uppercase tracking-widest">Nomor Surat Jalan</p>

@@ -12,7 +12,7 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 bg-gradient-to-r from-blue-600 to-blue-500 flex items-center justify-between">
+        <div class="px-6 py-5 bg-blue-600 flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-bold text-white">{{ $pangkalan->nama_pangkalan }}</h2>
                 <p class="text-blue-100 text-sm mt-0.5">ID: #{{ $pangkalan->id }}</p>

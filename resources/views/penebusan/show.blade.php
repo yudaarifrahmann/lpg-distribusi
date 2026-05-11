@@ -15,7 +15,7 @@
         <div class="space-y-6">
             {{-- Main Info --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-5 bg-gradient-to-r from-emerald-600 to-emerald-500">
+                <div class="px-6 py-5 bg-emerald-600">
                     <h3 class="text-xl font-bold text-white">DO #{{ $penebusan->nomor_do }}</h3>
                     <p class="text-emerald-100 text-sm mt-1">Berhasil dicatat pada {{ $penebusan->created_at->format('d M Y H:i') }}</p>
                 </div>

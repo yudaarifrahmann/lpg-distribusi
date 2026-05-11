@@ -11,7 +11,7 @@
         </a>
     </div>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 bg-gradient-to-r {{ $driver->role_pekerjaan == 'supir' ? 'from-blue-600 to-blue-500' : 'from-purple-600 to-purple-500' }} flex items-center justify-between">
+        <div class="px-6 py-5 {{ $driver->role_pekerjaan == 'supir' ? 'bg-blue-600' : 'bg-purple-600' }} flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-bold text-white">{{ $driver->nama }}</h2>
                 <p class="text-white/70 text-sm mt-0.5">{{ ucfirst($driver->role_pekerjaan) }} — ID: #{{ $driver->id }}</p>

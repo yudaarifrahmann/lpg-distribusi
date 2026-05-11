@@ -85,7 +85,7 @@
             </div>
 
             <div class="pt-4 flex items-center justify-end">
-                <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition duration-200">
+                <button type="submit" class="px-6 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition duration-200">
                     Proses Penebusan
                 </button>
             </div>

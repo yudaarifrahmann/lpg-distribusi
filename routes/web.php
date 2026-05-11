@@ -31,6 +31,10 @@ Route::get('/', function () {
     return view('landing');
 });
 
+Route::get('/syarat-ketentuan', function () {
+    return view('terms');
+})->name('terms');
+
 // Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');

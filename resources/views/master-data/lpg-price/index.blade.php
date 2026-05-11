@@ -11,7 +11,7 @@
             <p class="text-sm text-gray-500 mt-1">Kelola daftar harga LPG untuk dropdown transaksi</p>
         </div>
         @can('create master data')
-        <button @click="showCreate = true" class="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 hover:-translate-y-0.5">
+        <button @click="showCreate = true" class="inline-flex items-center px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 hover:-translate-y-0.5">
             <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
             Tambah Harga
         </button>
@@ -53,7 +53,7 @@
                         <td class="px-6 py-4 text-sm text-gray-500">{{ $lpgPrices->firstItem() + $i }}</td>
                         <td class="px-6 py-4 text-sm font-semibold text-gray-800">{{ $price->nama_harga }}</td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border border-emerald-200">
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
                                 Rp {{ number_format($price->harga, 0, ',', '.') }}
                             </span>
                         </td>
@@ -126,7 +126,7 @@
                     </div>
                     <div class="flex justify-end space-x-3 pt-4 border-t">
                         <button type="button" @click="showCreate = false" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Batal</button>
-                        <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg shadow-lg shadow-blue-500/30 transition">Simpan</button>
+                        <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg shadow-lg shadow-blue-500/30 transition">Simpan</button>
                     </div>
                 </form>
             </div>
@@ -161,7 +161,7 @@
                     </div>
                     <div class="flex justify-end space-x-3 pt-4 border-t">
                         <button type="button" @click="showEdit = false" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Batal</button>
-                        <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-400 rounded-lg shadow-lg shadow-amber-500/30 transition">Perbarui</button>
+                        <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-lg shadow-lg shadow-amber-500/30 transition">Perbarui</button>
                     </div>
                 </form>
             </div>

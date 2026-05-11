@@ -91,7 +91,7 @@
 
             <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
                 <a href="{{ route('user-management.index') }}" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Batal</a>
-                <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 text-white text-sm font-semibold rounded-lg shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition">
+                <button type="submit" class="px-6 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-lg shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition">
                     Perbarui User
                 </button>
             </div>

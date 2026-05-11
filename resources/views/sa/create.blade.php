@@ -42,7 +42,7 @@
             </div>
 
             <div class="pt-4 flex items-center justify-end">
-                <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition duration-200">
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition duration-200">
                     Simpan SA
                 </button>
             </div>

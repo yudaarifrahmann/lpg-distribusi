@@ -136,7 +136,7 @@
                 <style> [x-cloak] { display: none !important; } </style>
                 
                 <div class="pt-4 flex items-center justify-end">
-                    <button type="button" @click="showModal = true" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition duration-200 hover:-translate-y-0.5">
+                    <button type="button" @click="showModal = true" class="px-8 py-3 bg-indigo-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition duration-200 hover:-translate-y-0.5">
                         Konfirmasi & Berangkatkan
                     </button>
                 </div>

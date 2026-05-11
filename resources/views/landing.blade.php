@@ -24,7 +24,7 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
                         <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-1.945-1.164c-.143-.225-.35-.373-.572-.444a1 1 0 00-1.287.8 3.007 3.007 0 00-.164 1.084c.058 1.233.662 2.342 1.593 3.11.525.434 1.156.753 1.826.927a6.02 6.02 0 002.75.09c.925-.196 1.79-.673 2.456-1.37.726-.762 1.19-1.753 1.292-2.882a5.01 5.01 0 00-.49-2.678c-.293-.556-.674-1.047-1.063-1.468a13.372 13.372 0 00-.964-.94c.067-.434.144-.872.233-1.29.178-.84.388-1.59.604-2.166.11-.293.214-.538.302-.712a2.38 2.38 0 01.082-.134z"/></svg>
                     </div>
                     <span class="text-xl font-extrabold tracking-tight text-slate-900 uppercase">LPG <span class="text-blue-600">Distrib</span></span>
@@ -53,7 +53,7 @@
             </div>
             <h1 class="text-5xl lg:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight mb-8">
                 Optimalkan Distribusi LPG <br> 
-                <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Lebih Cepat & Transparan.</span>
+                <span class="text-blue-600">Lebih Cepat & Transparan.</span>
             </h1>
             <p class="max-w-2xl mx-auto text-lg text-slate-500 leading-relaxed mb-12">
                 Sistem manajemen distribusi LPG paling modern untuk membantu agen mengelola stok gudang, penjualan pangkalan, hingga piutang dalam satu dashboard terpusat.
@@ -68,7 +68,7 @@
         <div class="mt-20 relative max-w-5xl mx-auto">
             <div class="bg-white p-4 rounded-3xl shadow-[0_40px_100px_-15px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden">
                 <div class="bg-slate-50 rounded-2xl h-[400px] lg:h-[500px] flex items-center justify-center relative overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10"></div>
+                    <div class="absolute inset-0 bg-blue-500/10"></div>
                     <div class="relative text-center p-8">
                         <div class="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-6">
                             <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -156,8 +156,8 @@
             </div>
             <p class="text-slate-400 text-sm mb-8">&copy; 2026 LPG Distribution Management System. All rights reserved.</p>
             <div class="flex justify-center space-x-6">
-                <a href="#" class="text-slate-400 hover:text-blue-600 transition text-[10px] font-bold uppercase tracking-widest">Privacy Policy</a>
-                <a href="#" class="text-slate-400 hover:text-blue-600 transition text-[10px] font-bold uppercase tracking-widest">Terms of Service</a>
+                <a href="#" class="text-slate-400 hover:text-blue-600 transition text-[10px] font-bold uppercase tracking-widest">Kebijakan Privasi</a>
+                <a href="{{ route('terms') }}" class="text-slate-400 hover:text-blue-600 transition text-[10px] font-bold uppercase tracking-widest">Syarat & Ketentuan</a>
             </div>
         </div>
     </footer>

@@ -114,7 +114,7 @@
                 </button>
                 <div class="flex items-center gap-3 w-full sm:w-auto">
                     <a href="{{ route('user-management.index') }}" class="w-full sm:w-auto px-4 py-2.5 text-center text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Batal</a>
-                    <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition">
+                    <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition">
                         Simpan Semua User
                     </button>
                 </div>
