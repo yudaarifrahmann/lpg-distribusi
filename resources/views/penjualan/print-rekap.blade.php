@@ -56,6 +56,7 @@
                 <th>Armada / Supir</th>
                 <th class="text-right">Qty</th>
                 <th class="text-center">Retur</th>
+                <th class="text-center">Retur Gudang</th>
                 <th class="text-right">Total (Rp)</th>
                 <th class="text-right">Tunai</th>
                 <th class="text-right">Transfer</th>
@@ -73,6 +74,7 @@
                 <td>{{ $p->truck->nomor_polisi }} / {{ $p->supir->nama }}</td>
                 <td class="text-right">{{ number_format($p->jumlah_tabung) }}</td>
                 <td class="text-center">{{ $p->returs->sum('jumlah_retur') ?: '-' }}</td>
+                <td class="text-center">{{ $p->returs->where('status_retur', 'diterima')->sum('jumlah_retur') ?: '-' }}</td>
                 <td class="text-right">{{ number_format($p->total_penjualan, 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($p->nominal_cash, 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($p->nominal_transfer, 0, ',', '.') }}</td>
@@ -85,6 +87,7 @@
                 <td colspan="5" class="text-right">TOTAL</td>
                 <td class="text-right">{{ number_format($summary['total_tabung']) }}</td>
                 <td class="text-center">{{ number_format($summary['total_retur']) }}</td>
+                <td class="text-center">{{ number_format($summary['total_retur'] + $summary['total_sisa_kembali']) }}</td>
                 <td class="text-right">{{ number_format($summary['total_omzet'], 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($summary['total_cash'], 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($summary['total_transfer'], 0, ',', '.') }}</td>
@@ -102,6 +105,14 @@
             <tr>
                 <td>Total Tabung Retur (Bocor/Rusak)</td>
                 <td class="text-right">{{ number_format($summary['total_retur']) }} Tabung</td>
+            </tr>
+            <tr>
+                <td>Total Pengembalian Sisa Stok</td>
+                <td class="text-right">{{ number_format($summary['total_sisa_kembali']) }} Tabung</td>
+            </tr>
+            <tr style="border-top: 1px solid #eee;">
+                <td class="font-bold">TOTAL KEMBALI KE GUDANG</td>
+                <td class="text-right font-bold">{{ number_format($summary['total_retur'] + $summary['total_sisa_kembali']) }} Tabung</td>
             </tr>
             <tr>
                 <td>Total Pemasukan Tunai</td>

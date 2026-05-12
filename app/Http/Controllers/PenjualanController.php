@@ -359,7 +359,19 @@ class PenjualanController extends Controller
         }
 
         $penjualans = $query->latest('tanggal_penjualan')->get();
-        
+
+        $truckIds = $penjualans->pluck('truck_id')->unique();
+        $startDate = $request->start_date ?? ($penjualans->min('tanggal_penjualan')?->format('Y-m-d'));
+        $endDate = $request->end_date ?? ($penjualans->max('tanggal_penjualan')?->format('Y-m-d'));
+
+        $totalSisaKembali = 0;
+        if ($truckIds->isNotEmpty() && $startDate && $endDate) {
+            $totalSisaKembali = \App\Models\VehicleStockHistory::whereIn('truck_id', $truckIds)
+                ->where('jenis_mutasi', 'retur_gudang')
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->sum('stok_keluar');
+        }
+
         $summary = [
             'total_tabung' => $penjualans->sum('jumlah_tabung'),
             'total_omzet' => $penjualans->sum('total_penjualan'),
@@ -367,6 +379,8 @@ class PenjualanController extends Controller
             'total_transfer' => $penjualans->sum('nominal_transfer'),
             'total_piutang' => $penjualans->sum(fn($p) => $p->total_penjualan - $p->nominal_cash - $p->nominal_transfer),
             'total_retur' => $penjualans->sum(fn($p) => $p->returs->sum('jumlah_retur')),
+            'total_retur_gudang' => $penjualans->sum(fn($p) => $p->returs->where('status_retur', 'diterima')->sum('jumlah_retur')),
+            'total_sisa_kembali' => $totalSisaKembali,
         ];
 
         return view('penjualan.print-rekap', compact('penjualans', 'summary'));
