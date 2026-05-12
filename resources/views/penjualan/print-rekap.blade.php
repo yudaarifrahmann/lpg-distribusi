@@ -87,7 +87,7 @@
                 <td colspan="5" class="text-right">TOTAL</td>
                 <td class="text-right">{{ number_format($summary['total_tabung']) }}</td>
                 <td class="text-center">{{ number_format($summary['total_retur']) }}</td>
-                <td class="text-center">{{ number_format($summary['total_retur'] + $summary['total_sisa_kembali']) }}</td>
+                <td class="text-center">{{ number_format($summary['total_sisa_kembali']) }}</td>
                 <td class="text-right">{{ number_format($summary['total_omzet'], 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($summary['total_cash'], 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($summary['total_transfer'], 0, ',', '.') }}</td>
@@ -108,11 +108,11 @@
             </tr>
             <tr>
                 <td>Total Pengembalian Sisa Stok</td>
-                <td class="text-right">{{ number_format($summary['total_sisa_kembali']) }} Tabung</td>
+                <td class="text-right">{{ number_format($summary['total_sisa_kembali'] - $summary['total_retur']) }} Tabung</td>
             </tr>
             <tr style="border-top: 1px solid #eee;">
                 <td class="font-bold">TOTAL KEMBALI KE GUDANG</td>
-                <td class="text-right font-bold">{{ number_format($summary['total_retur'] + $summary['total_sisa_kembali']) }} Tabung</td>
+                <td class="text-right font-bold">{{ number_format($summary['total_sisa_kembali']) }} Tabung</td>
             </tr>
             <tr>
                 <td>Total Pemasukan Tunai</td>
