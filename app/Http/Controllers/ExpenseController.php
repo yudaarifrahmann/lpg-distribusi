@@ -60,7 +60,14 @@ class ExpenseController extends Controller
      */
     public function create()
     {
-        return view('expense.create');
+        $users = collect();
+        if (Auth::user()->hasRole('superadmin')) {
+            $users = \App\Models\User::with('roles')->get();
+        } elseif (Auth::user()->hasRole('admin_keuangan')) {
+            $users = \App\Models\User::with('roles')->where('branch_id', Auth::user()->branch_id)->get();
+        }
+
+        return view('expense.create', compact('users'));
     }
 
     /**
@@ -71,6 +78,7 @@ class ExpenseController extends Controller
         // Simple manual validation or use a Request class updated for arrays
         $data = $request->validate([
             'tanggal_pengeluaran' => 'required|date',
+            'user_id' => 'nullable|exists:users,id',
             'items' => 'required|array|min:1',
             'items.*.nama' => 'required|string|max:255',
             'items.*.nominal' => 'required|numeric|min:0',
@@ -81,13 +89,18 @@ class ExpenseController extends Controller
             'attachments.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
         
+        $userId = Auth::id();
+        if (Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan']) && $request->filled('user_id')) {
+            $userId = $request->user_id;
+        }
+
         DB::beginTransaction();
         try {
             $expenses = [];
             foreach ($request->items as $item) {
                 $expense = Expense::create([
                     'tanggal_pengeluaran' => $request->tanggal_pengeluaran,
-                    'user_id' => Auth::id(),
+                    'user_id' => $userId,
                     'expense_category_id' => $item['category_id'] ?? null,
                     'nama_pengeluaran' => $item['nama'],
                     'nominal' => $item['nominal'],

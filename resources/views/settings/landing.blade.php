@@ -70,10 +70,16 @@
                         <input type="text" name="landing_primary_button" value="{{ old('landing_primary_button', $settings['landing_primary_button']) }}" class="mt-2 w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500">
                         @error('landing_primary_button')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </label>
-                    <label class="block">
+                    <label class="block md:col-span-2">
                         <span class="text-xs font-bold text-gray-600 uppercase">Tombol Kedua</span>
                         <input type="text" name="landing_secondary_button" value="{{ old('landing_secondary_button', $settings['landing_secondary_button']) }}" class="mt-2 w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500">
                         @error('landing_secondary_button')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </label>
+                    <label class="block md:col-span-2">
+                        <span class="text-xs font-bold text-gray-600 uppercase">Nomor WhatsApp Admin (Untuk Reset Password)</span>
+                        <input type="text" name="whatsapp_admin" value="{{ old('whatsapp_admin', $settings['whatsapp_admin'] ?? '') }}" class="mt-2 w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500" placeholder="Contoh: 6281234567890">
+                        <p class="text-[10px] text-gray-400 mt-1">Gunakan format 628... tanpa spasi/tanda hubung.</p>
+                        @error('whatsapp_admin')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </label>
                 </div>
             </div>

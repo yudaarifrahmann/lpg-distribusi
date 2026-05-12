@@ -44,9 +44,28 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal Global <span class="text-red-500">*</span></label>
-                        <input type="date" name="tanggal_pengeluaran" value="{{ date('Y-m-d') }}" required class="w-32 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal Global <span class="text-red-500">*</span></label>
+                            <input type="date" name="tanggal_pengeluaran" value="{{ date('Y-m-d') }}" required class="w-full md:w-40 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                        </div>
+
+                        @if(auth()->user()->hasAnyRole(['superadmin', 'admin_keuangan']))
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pengeluaran Atas Nama Siapa <span class="text-red-500">*</span></label>
+                            <select name="user_id" required class="w-full md:w-72 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                                <option value="">-- Pilih Akun / Nama --</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ old('user_id', auth()->id()) == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }}
+                                        @if($user->roles->count() > 0)
+                                            ({{ $user->roles->pluck('name')->map(function($r) { return str_replace('_', ' ', ucwords($r, '_')); })->join(', ') }})
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
                     </div>
 
                     <div class="space-y-4">

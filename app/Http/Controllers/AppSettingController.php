@@ -39,6 +39,7 @@ class AppSettingController extends Controller
             'landing_stat_3_label' => ['required', 'string', 'max:60'],
             'landing_stat_4_value' => ['required', 'string', 'max:30'],
             'landing_stat_4_label' => ['required', 'string', 'max:60'],
+            'whatsapp_admin' => ['required', 'string', 'max:20'],
         ]);
 
         if ($request->hasFile('logo')) {

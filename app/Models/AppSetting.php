@@ -35,6 +35,7 @@ class AppSetting extends Model
         'landing_stat_3_label' => 'Distribusi Harian',
         'landing_stat_4_value' => 'Audit',
         'landing_stat_4_label' => 'Riwayat Transaksi',
+        'whatsapp_admin' => '6281234567890',
     ];
 
     public static function getValue(string $key, mixed $default = null): mixed

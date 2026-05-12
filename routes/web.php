@@ -42,6 +42,15 @@ Route::get('/syarat-ketentuan', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+
+    // Forgot Password
+    Route::get('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showOptions'])->name('forgot-password.options');
+    Route::get('/forgot-password/email', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showEmailForm'])->name('forgot-password.email-form');
+    Route::post('/forgot-password/email', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendOTP'])->name('forgot-password.send-otp');
+    Route::get('/forgot-password/verify', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showVerifyOTPForm'])->name('forgot-password.verify-form');
+    Route::post('/forgot-password/verify', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'verifyOTP'])->name('forgot-password.verify-otp');
+    Route::get('/forgot-password/reset', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showResetForm'])->name('forgot-password.reset-form');
+    Route::post('/forgot-password/reset', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword'])->name('forgot-password.reset-password');
 });
 
 // Protected Routes
