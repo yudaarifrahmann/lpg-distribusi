@@ -126,9 +126,13 @@
                 <td>Total Piutang Berjalan</td>
                 <td class="text-right">Rp {{ number_format($summary['total_piutang'], 0, ',', '.') }}</td>
             </tr>
+            <tr>
+                <td>Total Pengeluaran Operasional</td>
+                <td class="text-right text-red-600">- Rp {{ number_format($summary['total_pengeluaran'], 0, ',', '.') }}</td>
+            </tr>
             <tr class="total-row">
-                <td>GRAND TOTAL OMZET</td>
-                <td class="text-right">Rp {{ number_format($summary['total_omzet'], 0, ',', '.') }}</td>
+                <td>GRAND TOTAL OMZET (BERSIH)</td>
+                <td class="text-right">Rp {{ number_format($summary['total_omzet'] - $summary['total_pengeluaran'], 0, ',', '.') }}</td>
             </tr>
         </table>
     </div>

@@ -53,7 +53,14 @@ class PenjualanController extends Controller
             $query->where('status_pembayaran', $request->status_pembayaran);
         }
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
+        if ($request->filled('driver_id')) {
+            $query->where('driver_id', $request->driver_id);
+        }
+
+        // If not history mode and no dates provided, default to today
+        if (!$request->has('history') && !$request->filled('start_date')) {
+            $query->whereDate('tanggal_penjualan', date('Y-m-d'));
+        } elseif ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal_penjualan', [$request->start_date, $request->end_date]);
         }
 
@@ -354,6 +361,10 @@ class PenjualanController extends Controller
             $query->where('status_pembayaran', $request->status_pembayaran);
         }
 
+        if ($request->filled('driver_id')) {
+            $query->where('driver_id', $request->driver_id);
+        }
+
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal_penjualan', [$request->start_date, $request->end_date]);
         }
@@ -361,8 +372,8 @@ class PenjualanController extends Controller
         $penjualans = $query->latest('tanggal_penjualan')->get();
 
         $truckIds = $penjualans->pluck('truck_id')->unique();
-        $startDate = $request->start_date ?? ($penjualans->min('tanggal_penjualan')?->format('Y-m-d'));
-        $endDate = $request->end_date ?? ($penjualans->max('tanggal_penjualan')?->format('Y-m-d'));
+        $startDate = $request->start_date ?? date('Y-m-d');
+        $endDate = $request->end_date ?? date('Y-m-d');
 
         $totalSisaKembali = 0;
         if ($truckIds->isNotEmpty() && $startDate && $endDate) {
@@ -371,6 +382,18 @@ class PenjualanController extends Controller
                 ->whereBetween('tanggal', [$startDate, $endDate])
                 ->sum('stok_keluar');
         }
+
+        // Fetch operational expenses for the period and filters
+        $expenseQuery = \App\Models\Expense::where('status_verifikasi', 'disetujui');
+        if ($startDate && $endDate) {
+            $expenseQuery->whereBetween('tanggal_pengeluaran', [$startDate, $endDate]);
+        }
+        if ($request->filled('driver_id')) {
+            $expenseQuery->where('user_id', \App\Models\Driver::find($request->driver_id)->user_id ?? 0);
+        } elseif (Auth::user()->hasRole('supir_knek')) {
+            $expenseQuery->where('user_id', Auth::id());
+        }
+        $totalPengeluaran = $expenseQuery->sum('nominal');
 
         $summary = [
             'total_tabung' => $penjualans->sum('jumlah_tabung'),
@@ -381,6 +404,7 @@ class PenjualanController extends Controller
             'total_retur' => $penjualans->sum(fn($p) => $p->returs->sum('jumlah_retur')),
             'total_retur_gudang' => $penjualans->sum(fn($p) => $p->returs->where('status_retur', 'diterima')->sum('jumlah_retur')),
             'total_sisa_kembali' => $totalSisaKembali,
+            'total_pengeluaran' => $totalPengeluaran,
         ];
 
         return view('penjualan.print-rekap', compact('penjualans', 'summary'));

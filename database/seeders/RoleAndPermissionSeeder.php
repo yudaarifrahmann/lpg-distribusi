@@ -109,6 +109,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view penjualan',
             'create penjualan', // Allow supir to input sales
             'view piutang', // Allow supir to see their own receivables
+            'view pengeluaran',
+            'create pengeluaran',
         ];
 
         $supirKnek->syncPermissions($driverPermissions);

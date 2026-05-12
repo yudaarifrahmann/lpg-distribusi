@@ -76,4 +76,9 @@ class Penjualan extends Model
     {
         return $this->hasMany(ReturTabung::class);
     }
+
+    public function expenses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
 }

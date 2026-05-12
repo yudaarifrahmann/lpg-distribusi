@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 @section('title', 'Penjualan - LPG Distribution')
-@section('page_title', 'Histori Penjualan')
+@section('page_title', request()->has('history') ? 'History Penjualan' : 'Penjualan Hari Ini')
 
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
@@ -40,6 +40,17 @@
                 @endforeach
             </select>
         </div>
+        @if(!Auth::user()->hasRole('supir_knek') || Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan']))
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Supir/Knek</label>
+            <select name="driver_id" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                <option value="">Semua Supir</option>
+                @foreach(\App\Models\Driver::where('status', 'aktif')->get() as $d)
+                    <option value="{{ $d->id }}" {{ request('driver_id') == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
         <div class="lg:col-span-4 flex flex-col sm:flex-row gap-2 mt-2">
             <button type="submit" class="flex-1 px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition">Terapkan Filter</button>
             <a href="{{ route('penjualan.print-rekap', request()->all()) }}" target="_blank" class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition text-center flex items-center justify-center">

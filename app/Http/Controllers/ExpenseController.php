@@ -66,33 +66,56 @@ class ExpenseController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreExpenseRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
+        // Simple manual validation or use a Request class updated for arrays
+        $data = $request->validate([
+            'tanggal_pengeluaran' => 'required|date',
+            'items' => 'required|array|min:1',
+            'items.*.nama' => 'required|string|max:255',
+            'items.*.nominal' => 'required|numeric|min:0',
+            'items.*.metode' => 'required|in:cash,transfer',
+            'items.*.category_id' => 'nullable|exists:expense_categories,id',
+            'items.*.keterangan' => 'nullable|string',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
         
         DB::beginTransaction();
         try {
-            $data['user_id'] = Auth::id();
-            $data['status_verifikasi'] = 'disetujui';
-            $data['verified_by'] = Auth::id();
-            $data['verified_at'] = now();
-            
-            $expense = Expense::create($data);
+            $expenses = [];
+            foreach ($request->items as $item) {
+                $expense = Expense::create([
+                    'tanggal_pengeluaran' => $request->tanggal_pengeluaran,
+                    'user_id' => Auth::id(),
+                    'expense_category_id' => $item['category_id'] ?? null,
+                    'nama_pengeluaran' => $item['nama'],
+                    'nominal' => $item['nominal'],
+                    'metode_pembayaran' => $item['metode'],
+                    'keterangan' => $item['keterangan'] ?? null,
+                    'status_verifikasi' => 'disetujui',
+                    'verified_by' => Auth::id(),
+                    'verified_at' => now(),
+                ]);
+                $expenses[] = $expense;
+            }
 
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $path = $file->store('expenses', 'public');
-                    ExpenseAttachment::create([
-                        'expense_id' => $expense->id,
-                        'path_file' => $path,
-                        'nama_file' => $file->getClientOriginalName(),
-                        'mime_type' => $file->getMimeType(),
-                    ]);
+                    foreach ($expenses as $expense) {
+                        ExpenseAttachment::create([
+                            'expense_id' => $expense->id,
+                            'path_file' => $path,
+                            'nama_file' => $file->getClientOriginalName(),
+                            'mime_type' => $file->getMimeType(),
+                        ]);
+                    }
                 }
             }
 
             DB::commit();
-            return redirect()->route('expense.index')->with('success', 'Pengeluaran berhasil diajukan dan sedang menunggu verifikasi.');
+            return redirect()->route('expense.index')->with('success', count($expenses) . ' Pengeluaran berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal menyimpan pengeluaran: ' . $e->getMessage())->withInput();

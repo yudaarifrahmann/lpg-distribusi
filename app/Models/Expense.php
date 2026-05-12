@@ -18,6 +18,7 @@ class Expense extends Model
     protected $fillable = [
         'tanggal_pengeluaran',
         'user_id',
+        'penjualan_id',
         'expense_category_id',
         'nama_pengeluaran',
         'nominal',
