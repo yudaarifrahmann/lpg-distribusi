@@ -15,15 +15,16 @@
         <p class="text-[10px] text-gray-400 mt-2">{{ number_format($expenses->count()) }} Transaksi</p>
     </div>
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Piutang</p>
-        <h3 class="text-2xl font-black text-amber-500">Rp {{ number_format($summary['total_utang']) }}</h3>
-        <p class="text-[10px] text-gray-400 mt-2">Tagihan Belum Lunas</p>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Penebusan DO</p>
+        <h3 class="text-2xl font-black text-blue-600">Rp {{ number_format($summary['total_penebusan']) }}</h3>
+        <p class="text-[10px] text-gray-400 mt-2">{{ number_format($summary['total_tabung_penebusan']) }} Pcs</p>
     </div>
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Saldo</p>
-        <h3 class="text-2xl font-black {{ $summary['saldo'] >= 0 ? 'text-blue-600' : 'text-red-600' }}">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Laba Bersih (Est)</p>
+        <h3 class="text-2xl font-black {{ $summary['saldo'] >= 0 ? 'text-indigo-600' : 'text-red-600' }}">
             Rp {{ number_format($summary['saldo']) }}
         </h3>
+        <p class="text-[10px] text-gray-400 mt-2">Pemasukan - (Beban + Penebusan)</p>
     </div>
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Tabung (Jual)</p>
@@ -41,7 +42,7 @@
     <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Cari Transaksi</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Truk / Supir / Invoice..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Truk / Supir / Invoice / DO..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs">
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Metode Pembayaran</label>
@@ -103,9 +104,11 @@
                     <td class="px-6 py-4 font-bold text-gray-600">{{ $item['cabang'] }}</td>
                     <td class="px-6 py-4">
                         @if($item['type'] === 'penjualan')
-                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold">Pemasukan</span>
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold">Penjualan</span>
                         @elseif($item['type'] === 'expense')
                             <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-bold">Pengeluaran</span>
+                        @elseif($item['type'] === 'penebusan')
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold">Penebusan</span>
                         @elseif($item['type'] === 'retur')
                             <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-[10px] font-bold">Retur</span>
                         @endif
@@ -131,6 +134,8 @@
                             <span class="text-emerald-600">Rp {{ number_format($item['nominal']) }}</span>
                         @elseif($item['type'] === 'expense')
                             <span class="text-red-600">(Rp {{ number_format($item['nominal']) }})</span>
+                        @elseif($item['type'] === 'penebusan')
+                            <span class="text-blue-600">(Rp {{ number_format($item['nominal']) }})</span>
                         @else
                             <span class="text-gray-400">-</span>
                         @endif
@@ -145,7 +150,7 @@
             </tbody>
             <tfoot class="bg-gray-50/80 font-black text-[10px]">
                 <tr>
-                    <td colspan="4" class="px-6 py-4 uppercase text-right">TOTAL</td>
+                    <td colspan="4" class="px-6 py-4 uppercase text-right">TOTAL SALDO AKHIR</td>
                     <td class="px-6 py-4 text-center text-gray-900">{{ number_format($summary['total_tabung_penjualan']) }}</td>
                     <td class="px-6 py-4 text-right text-gray-900">{{ number_format($summary['total_cash']) }}</td>
                     <td class="px-6 py-4 text-right text-blue-700">{{ number_format($summary['total_transfer']) }}</td>
@@ -159,17 +164,28 @@
 </div>
 
 {{-- Summary Cards by Type --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
     {{-- Pemasukan Detail --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 bg-emerald-50/50 border-b border-emerald-100">
-            <h4 class="text-xs font-black text-emerald-600 uppercase tracking-widest">Rincian Pemasukan</h4>
+            <h4 class="text-xs font-black text-emerald-600 uppercase tracking-widest">Rincian Penjualan</h4>
         </div>
         <div class="px-6 py-4">
             <p class="text-[10px] text-gray-400 uppercase mb-3">Jumlah Transaksi: <span class="font-bold text-gray-600">{{ $penjualans->count() }}</span></p>
             <p class="text-sm font-black text-emerald-600">Rp {{ number_format($summary['total_pemasukan']) }}</p>
             <p class="text-[10px] text-gray-400 mt-2">Total Tabung: <span class="font-bold text-gray-600">{{ number_format($summary['total_tabung_penjualan']) }} Pcs</span></p>
-            <p class="text-[10px] text-gray-400">Rata-rata: <span class="font-bold text-gray-600">Rp {{ number_format($penjualans->count() > 0 ? $summary['total_pemasukan'] / $penjualans->count() : 0) }}</span></p>
+        </div>
+    </div>
+
+    {{-- Penebusan Detail --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-blue-50/50 border-b border-blue-100">
+            <h4 class="text-xs font-black text-blue-600 uppercase tracking-widest">Rincian Penebusan DO</h4>
+        </div>
+        <div class="px-6 py-4">
+            <p class="text-[10px] text-gray-400 uppercase mb-3">Jumlah DO: <span class="font-bold text-gray-600">{{ $summary['total_penebusan'] > 0 ? 'Tersedia' : '0' }}</span></p>
+            <p class="text-sm font-black text-blue-600">Rp {{ number_format($summary['total_penebusan']) }}</p>
+            <p class="text-[10px] text-gray-400 mt-2">HPP (Modal Tabung)</p>
         </div>
     </div>
 
@@ -180,9 +196,8 @@
         </div>
         <div class="px-6 py-4">
             <p class="text-[10px] text-gray-400 uppercase mb-3">Jumlah Transaksi: <span class="font-bold text-gray-600">{{ $expenses->count() }}</span></p>
-            <p class="text-sm font-black text-red-600">Rp {{ number_format($summary['total_pengeluaran']) }}</p>
-            <p class="text-[10px] text-gray-400 mt-2">Persentase: <span class="font-bold text-gray-600">{{ $summary['total_pemasukan'] > 0 ? number_format(($summary['total_pengeluaran'] / $summary['total_pemasukan']) * 100, 2) : 0 }}%</span></p>
-            <p class="text-[10px] text-gray-400">Rata-rata: <span class="font-bold text-gray-600">Rp {{ number_format($expenses->count() > 0 ? $summary['total_pengeluaran'] / $expenses->count() : 0) }}</span></p>
+            <p class="text-sm font-black text-red-600">Rp {{ number_format($expenses->sum('nominal')) }}</p>
+            <p class="text-[10px] text-gray-400 mt-2">Beban Operasional</p>
         </div>
     </div>
 
@@ -194,9 +209,9 @@
         <div class="px-6 py-4">
             <p class="text-[10px] text-gray-400 uppercase mb-3">Jumlah Transaksi: <span class="font-bold text-gray-600">{{ $returs->count() }}</span></p>
             <p class="text-sm font-black text-orange-600">{{ number_format($summary['total_retur_tabung']) }} Pcs</p>
-            <p class="text-[10px] text-gray-400 mt-2">Rata-rata per Transaksi: <span class="font-bold text-gray-600">{{ number_format($returs->count() > 0 ? $summary['total_retur_tabung'] / $returs->count() : 0) }} Pcs</span></p>
         </div>
     </div>
+</div>
 </div>
 
 {{-- Print Styles --}}

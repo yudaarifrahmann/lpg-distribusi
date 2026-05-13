@@ -229,13 +229,13 @@ class ReportController extends Controller
             return [
                 'type' => 'penjualan',
                 'tanggal' => $item->tanggal_penjualan,
-                'cabang' => $item->branch->name ?? '-',
+                'cabang' => $item->branch->name ?? 'PT. FARHAN ENERGI GASINDO',
                 'nama_truk' => $item->truck->nomor_polisi ?? '-',
                 'nama_supir' => $item->supir->nama ?? '-',
                 'nominal' => $item->total_penjualan,
                 'cash' => $item->nominal_cash,
                 'transfer' => $item->nominal_transfer,
-                'utang' => $item->piutang ? $item->piutang->sisa_tagihan : 0, // Sinkron dengan sisa tagihan
+                'utang' => $item->piutang ? $item->piutang->sisa_tagihan : 0,
                 'jumlah_tabung' => $item->jumlah_tabung,
                 'keterangan' => 'Penjualan - ' . $item->nomor_invoice,
                 'status' => 'Pemasukan',
@@ -264,7 +264,7 @@ class ReportController extends Controller
             return [
                 'type' => 'expense',
                 'tanggal' => $item->tanggal_pengeluaran,
-                'cabang' => $item->branch->name ?? '-',
+                'cabang' => $item->branch->name ?? 'PT. FARHAN ENERGI GASINDO',
                 'nama_truk' => '-',
                 'nama_supir' => $item->user->name ?? '-',
                 'nominal' => $item->nominal,
@@ -274,6 +274,36 @@ class ReportController extends Controller
                 'jumlah_tabung' => 0,
                 'keterangan' => 'Pengeluaran - ' . ($item->category ? $item->category->nama_kategori : $item->nama_pengeluaran),
                 'status' => 'Pengeluaran',
+            ];
+        });
+
+        // Get Penebusan DO (Cost of Goods Sold / Purchasing)
+        $penebusanQuery = Penebusan::with(['truck', 'driver', 'branch', 'scheduleAgreement'])
+            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('tanggal_penebusan', [$startDate, $endDate]);
+
+        if ($search) {
+            $penebusanQuery->where(function($q) use ($search) {
+                $q->where('nomor_do', 'like', "%$search%")
+                  ->orWhereHas('truck', fn($t) => $t->where('nomor_polisi', 'like', "%$search%"))
+                  ->orWhereHas('driver', fn($d) => $d->where('nama', 'like', "%$search%"));
+            });
+        }
+
+        $penebusans = $penebusanQuery->get()->map(function($item) {
+            return [
+                'type' => 'penebusan',
+                'tanggal' => $item->tanggal_penebusan,
+                'cabang' => $item->branch->name ?? 'PT. FARHAN ENERGI GASINDO',
+                'nama_truk' => $item->truck->nomor_polisi ?? '-',
+                'nama_supir' => $item->driver->nama ?? '-',
+                'nominal' => $item->total_penebusan,
+                'cash' => $item->total_penebusan, // Usually paid out
+                'transfer' => 0,
+                'utang' => 0,
+                'jumlah_tabung' => $item->jumlah_tabung,
+                'keterangan' => 'Penebusan DO - ' . $item->nomor_do,
+                'status' => 'Penebusan',
             ];
         });
 
@@ -298,7 +328,7 @@ class ReportController extends Controller
                 return [
                     'type' => 'retur',
                     'tanggal' => $item->tanggal_retur,
-                    'cabang' => $item->branch->name ?? '-',
+                    'cabang' => $item->branch->name ?? 'PT. FARHAN ENERGI GASINDO',
                     'nama_truk' => $item->truck->nomor_polisi ?? '-',
                     'nama_supir' => $item->supir->nama ?? '-',
                     'nominal' => 0,
@@ -315,19 +345,22 @@ class ReportController extends Controller
         $allData = collect()
             ->merge($penjualans)
             ->merge($expenses)
+            ->merge($penebusans)
             ->merge($returs)
             ->sortBy('tanggal');
 
         // Calculate Summary
         $summary = [
             'total_pemasukan' => $penjualans->sum('nominal'),
-            'total_pengeluaran' => $expenses->sum('nominal'),
+            'total_pengeluaran' => $expenses->sum('nominal') + $penebusans->sum('nominal'),
             'total_retur_tabung' => $returs->sum('jumlah_tabung'),
             'total_tabung_penjualan' => $penjualans->sum('jumlah_tabung'),
-            'saldo' => $penjualans->sum('nominal') - $expenses->sum('nominal'),
+            'total_tabung_penebusan' => $penebusans->sum('jumlah_tabung'),
+            'saldo' => $penjualans->sum('nominal') - ($expenses->sum('nominal') + $penebusans->sum('nominal')),
             'total_cash' => $penjualans->sum('cash'),
             'total_transfer' => $penjualans->sum('transfer'),
             'total_utang' => $penjualans->sum('utang'),
+            'total_penebusan' => $penebusans->sum('nominal'),
         ];
 
         return view('report.global', compact(

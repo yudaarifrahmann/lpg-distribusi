@@ -2,201 +2,79 @@
 
 namespace App\Exports;
 
+use App\Exports\GlobalReport\CoverSheet;
+use App\Exports\GlobalReport\RangkumanPenjualanSheet;
+use App\Exports\GlobalReport\RekapPenjualanHarianSheet;
+use App\Exports\GlobalReport\RekapPengeluaranHarianSheet;
+use App\Exports\GlobalReport\RekapPembelianRefillSheet;
+use App\Exports\GlobalReport\LabaRugiSheet;
+use App\Exports\GlobalReport\DokumenAlokasiSheet;
 use App\Models\Penjualan;
 use App\Models\Expense;
-use App\Models\ReturTabung;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use App\Models\Penebusan;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-class GlobalReportExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class GlobalReportExport implements WithMultipleSheets
 {
-    protected $startDate;
-    protected $endDate;
-    protected $user;
+    protected $request;
 
     public function __construct($request)
     {
-        $this->startDate = $request->start_date ?? Carbon::now()->startOfMonth()->toDateString();
-        $this->endDate = $request->end_date ?? Carbon::now()->endOfMonth()->toDateString();
-        $this->user = Auth::user();
+        $this->request = $request;
     }
 
-    public function collection()
+    public function sheets(): array
     {
-        $isSuperAdmin = $this->user->hasRole('superadmin');
-        $branchId = $this->user->branch_id;
-        $search = request('search');
-        $paymentMethod = request('payment_method');
+        $startDate = ($this->request->start_date && $this->request->start_date !== '') 
+            ? $this->request->start_date 
+            : Carbon::now()->startOfMonth()->toDateString();
+            
+        $endDate = ($this->request->end_date && $this->request->end_date !== '') 
+            ? $this->request->end_date 
+            : Carbon::now()->endOfMonth()->toDateString();
+        
+        $user = Auth::user();
+        $isSuperAdmin = $user ? $user->hasRole('superadmin') : true;
+        $branchId = $user ? $user->branch_id : null;
+        $period = Carbon::parse($startDate)->translatedFormat('F Y');
 
-        // Get Penjualan
-        $penjualanQuery = Penjualan::with(['truck', 'supir', 'branch', 'piutang'])
-            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
-            ->whereBetween('tanggal_penjualan', [$this->startDate, $this->endDate]);
+        $penjualans = Penjualan::with(['pangkalan', 'branch'])
+            ->when(!$isSuperAdmin && $branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('tanggal_penjualan', [$startDate, $endDate])
+            ->get();
 
-        if ($search) {
-            $penjualanQuery->where(function($q) use ($search) {
-                $q->whereHas('truck', fn($t) => $t->where('nomor_polisi', 'like', "%$search%"))
-                  ->orWhereHas('supir', fn($s) => $s->where('nama', 'like', "%$search%"))
-                  ->orWhere('nomor_invoice', 'like', "%$search%");
-            });
-        }
-
-        if ($paymentMethod) {
-            if ($paymentMethod === 'cash') $penjualanQuery->where('nominal_cash', '>', 0);
-            elseif ($paymentMethod === 'transfer') $penjualanQuery->where('nominal_transfer', '>', 0);
-            elseif ($paymentMethod === 'utang') $penjualanQuery->whereRaw('(total_penjualan - nominal_cash - nominal_transfer) > 0');
-        }
-
-        $penjualans = $penjualanQuery->get()->map(function($item) {
-            return [
-                'tanggal' => $item->tanggal_penjualan->format('d/m/Y'),
-                'cabang' => $item->branch->name ?? '-',
-                'jenis' => 'Pemasukan',
-                'truk' => $item->truck->nomor_polisi ?? '-',
-                'supir' => $item->supir->nama ?? '-',
-                'tabung' => $item->jumlah_tabung,
-                'cash' => $item->nominal_cash,
-                'transfer' => $item->nominal_transfer,
-                'utang' => $item->piutang ? $item->piutang->sisa_tagihan : 0,
-                'total' => $item->total_penjualan,
-                'keterangan' => 'Penjualan - ' . $item->nomor_invoice,
-            ];
-        });
-
-        // Get Expenses
-        $expenseQuery = Expense::with(['category', 'user', 'branch'])
-            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
+        $expenses = Expense::with(['category', 'branch'])
+            ->when(!$isSuperAdmin && $branchId, fn($q) => $q->where('branch_id', $branchId))
             ->where('status_verifikasi', 'disetujui')
-            ->whereBetween('tanggal_pengeluaran', [$this->startDate, $this->endDate]);
+            ->whereBetween('tanggal_pengeluaran', [$startDate, $endDate])
+            ->get();
 
-        if ($search) {
-            $expenseQuery->where(function($q) use ($search) {
-                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%$search%"))
-                  ->orWhere('nama_pengeluaran', 'like', "%$search%");
-            });
-        }
+        $penebusans = Penebusan::with(['branch'])
+            ->when(!$isSuperAdmin && $branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('tanggal_penebusan', [$startDate, $endDate])
+            ->get();
 
-        if ($paymentMethod && $paymentMethod !== 'cash') {
-            $expenseQuery->where('id', 0);
-        }
+        $totalPenebusanQty = $penebusans->sum('jumlah_tabung');
+        $totalPenebusanNominal = $penebusans->sum('total_penebusan');
+        $avgCost = $totalPenebusanQty > 0 ? $totalPenebusanNominal / $totalPenebusanQty : 15500;
 
-        $expenses = $expenseQuery->get()->map(function($item) {
-            return [
-                'tanggal' => Carbon::parse($item->tanggal_pengeluaran)->format('d/m/Y'),
-                'cabang' => $item->branch->name ?? '-',
-                'jenis' => 'Pengeluaran',
-                'truk' => '-',
-                'supir' => $item->user->name ?? '-',
-                'tabung' => 0,
-                'cash' => $item->nominal,
-                'transfer' => 0,
-                'utang' => 0,
-                'total' => -$item->nominal,
-                'keterangan' => 'Pengeluaran - ' . ($item->category ? $item->category->nama_kategori : $item->nama_pengeluaran),
-            ];
-        });
-
-        // Get Retur
-        $returQuery = ReturTabung::with(['truck', 'supir', 'branch'])
-            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
-            ->whereBetween('tanggal_retur', [$this->startDate, $this->endDate])
-            ->whereIn('status_retur', ['pending', 'diterima']);
-
-        if ($search) {
-            $returQuery->where(function($q) use ($search) {
-                $q->whereHas('truck', fn($t) => $t->where('nomor_polisi', 'like', "%$search%"))
-                  ->orWhereHas('supir', fn($s) => $s->where('nama', 'like', "%$search%"));
-            });
-        }
-
-        if ($paymentMethod) {
-            $returQuery->where('id', 0);
-        }
-
-        $returs = $returQuery->get()->map(function($item) {
-                return [
-                    'tanggal' => Carbon::parse($item->tanggal_retur)->format('d/m/Y'),
-                    'cabang' => $item->branch->name ?? '-',
-                    'jenis' => 'Retur',
-                    'truk' => $item->truck->nomor_polisi ?? '-',
-                    'supir' => $item->supir->nama ?? '-',
-                    'tabung' => $item->jumlah_retur,
-                    'cash' => 0,
-                    'transfer' => 0,
-                    'utang' => 0,
-                    'total' => 0,
-                    'keterangan' => 'Retur Tabung - ' . $item->kondisi_tabung . ' (' . $item->status_retur . ')',
-                ];
-            });
-
-        $allData = collect()->merge($penjualans)->merge($expenses)->merge($returs)->sortBy(function($item) {
-            return Carbon::createFromFormat('d/m/Y', $item['tanggal']);
-        });
-
-        // Add Total Row
-        $allData->push([
-            'tanggal' => 'TOTAL',
-            'cabang' => '',
-            'jenis' => '',
-            'truk' => '',
-            'supir' => '',
-            'tabung' => $allData->sum('tabung'),
-            'cash' => $allData->sum('cash'),
-            'transfer' => $allData->sum('transfer'),
-            'utang' => $allData->sum('utang'),
-            'total' => $allData->sum('total'),
-            'keterangan' => '',
-        ]);
-
-        return $allData;
-    }
-
-    public function headings(): array
-    {
-        return [
-            'Tanggal',
-            'Cabang',
-            'Jenis Transaksi',
-            'No Polisi Truk',
-            'Nama Personil',
-            'Jumlah Tabung',
-            'Pembayaran Cash',
-            'Pembayaran Transfer',
-            'Piutang (Utang)',
-            'Total Nominal',
-            'Keterangan',
+        $totals = [
+            'total_penjualan' => $penjualans->sum('total_penjualan'),
+            'total_tabung_penjualan' => $penjualans->sum('jumlah_tabung'),
+            'total_expenses' => $expenses->sum('nominal'),
+            'total_penebusan' => $totalPenebusanNominal,
         ];
-    }
 
-    public function map($item): array
-    {
         return [
-            $item['tanggal'],
-            $item['cabang'],
-            $item['jenis'],
-            $item['truk'],
-            $item['supir'],
-            $item['tabung'],
-            $item['cash'],
-            $item['transfer'],
-            $item['utang'],
-            $item['total'],
-            $item['keterangan'],
-        ];
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        $lastRow = $sheet->getHighestRow();
-        return [
-            1 => ['font' => ['bold' => true]],
-            $lastRow => ['font' => ['bold' => true]],
+            new CoverSheet($period),
+            new RangkumanPenjualanSheet($penjualans, $avgCost, $period),
+            new RekapPenjualanHarianSheet($penjualans),
+            new RekapPengeluaranHarianSheet($expenses),
+            new RekapPembelianRefillSheet($penebusans),
+            new LabaRugiSheet($totals, $period),
+            new DokumenAlokasiSheet($period),
         ];
     }
 }

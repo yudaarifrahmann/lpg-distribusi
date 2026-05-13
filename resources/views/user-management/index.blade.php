@@ -77,7 +77,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">
-                            {{ $user->branch ? $user->branch->name : 'Global' }}
+                            {{ $user->branch ? $user->branch->name : 'PT. FARHAN ENERGI GASINDO' }}
                         </td>
                         <td class="px-6 py-4">
                             @if($user->driver_count > 0)

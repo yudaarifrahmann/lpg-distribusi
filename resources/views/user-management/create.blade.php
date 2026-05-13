@@ -63,7 +63,7 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang</label>
                                     <select x-model="user.branch_id" :name="`users[${index}][branch_id]`" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option value="">-- Pilih Cabang (Global jika kosong) --</option>
+                                        <option value="">-- Pilih Cabang (PT. FARHAN ENERGI GASINDO jika kosong) --</option>
                                         @foreach($branches as $branch)
                                         <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                                         @endforeach
