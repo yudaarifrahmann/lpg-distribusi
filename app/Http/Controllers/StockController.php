@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StockHistory;
 use App\Models\StockSummary;
+use App\Models\StokTitipan;
 use Illuminate\Http\Request;
 
 class StockController extends Controller
@@ -81,6 +82,15 @@ class StockController extends Controller
         $trucks = \App\Models\Truck::where('status_kendaraan', 'aktif')->get();
         $drivers = \App\Models\Driver::where('status', 'aktif')->get();
 
+        // 5. Titipan Stats
+        $titipanStocks = StokTitipan::where('branch_id', \Illuminate\Support\Facades\Auth::user()->branch_id)->get();
+        $titipanSummary = [
+            'total_pemilik' => $titipanStocks->count(),
+            'total_tabung' => $titipanStocks->sum('total_tabung'),
+            'total_tersedia' => $titipanStocks->sum('jumlah_tersedia'),
+            'total_dipinjam' => $titipanStocks->sum('jumlah_dipinjam'),
+        ];
+
         return view('stock.index', compact(
             'totalStokGudang',
             'totalStokKendaraan',
@@ -89,7 +99,8 @@ class StockController extends Controller
             'gudangHistories',
             'vehicleHistories',
             'trucks',
-            'drivers'
+            'drivers',
+            'titipanSummary'
         ));
     }
 }

@@ -25,6 +25,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\AppSettingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\StokTitipanController;
 use Illuminate\Support\Facades\Route;
 
 // Landing Page
@@ -125,6 +126,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/backup', [BackupController::class, 'create'])->name('backup.create');
         Route::get('/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
         Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
+    });
+
+    // Titipan Tabung
+    Route::prefix('titipan')->name('titipan.')->group(function () {
+        Route::get('/', [StokTitipanController::class, 'index'])->name('index');
+        Route::post('/deposit', [StokTitipanController::class, 'deposit'])->name('deposit');
+        Route::post('/loan', [StokTitipanController::class, 'loan'])->name('loan');
+        Route::post('/return', [StokTitipanController::class, 'return'])->name('return');
+        Route::get('/report', [StokTitipanController::class, 'report'])->name('report');
+        Route::get('/export-excel', [StokTitipanController::class, 'exportExcel'])->name('export.excel');
     });
 
     // Laporan

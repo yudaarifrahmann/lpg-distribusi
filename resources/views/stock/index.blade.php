@@ -38,9 +38,35 @@
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
             </div>
             <div class="relative z-10">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Keseluruhan</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Operasional</p>
                 <h3 class="text-2xl font-black text-white">{{ number_format($totalKeseluruhan) }} <span class="text-sm font-medium text-gray-400">Tabung</span></h3>
             </div>
+        </div>
+    </div>
+
+    {{-- Titipan Summary --}}
+    <div class="mb-4">
+        <div class="flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-800 uppercase tracking-widest">Stok Titipan (Bukan Aset)</h3>
+            <a href="{{ route('titipan.index') }}" class="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline">Kelola Titipan →</a>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
+            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Tersedia (Titipan)</p>
+            <h3 class="text-2xl font-black text-emerald-700">{{ number_format($titipanSummary['total_tersedia']) }}</h3>
+        </div>
+        <div class="bg-amber-50/50 p-6 rounded-3xl border border-amber-100">
+            <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Sedang Dipinjam</p>
+            <h3 class="text-2xl font-black text-amber-700">{{ number_format($titipanSummary['total_dipinjam']) }}</h3>
+        </div>
+        <div class="bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
+            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Total Tabung Titipan</p>
+            <h3 class="text-2xl font-black text-blue-700">{{ number_format($titipanSummary['total_tabung']) }}</h3>
+        </div>
+        <div class="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100">
+            <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Pihak Menitip</p>
+            <h3 class="text-2xl font-black text-indigo-700">{{ number_format($titipanSummary['total_pemilik']) }}</h3>
         </div>
     </div>
 
