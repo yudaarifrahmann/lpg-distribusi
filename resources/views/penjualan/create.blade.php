@@ -9,9 +9,15 @@
     currentStok: 0,
     nominalCash: {{ old('nominal_cash', 0) }},
     nominalTransfer: {{ old('nominal_transfer', 0) }},
+    formattedCash: '',
+    formattedTransfer: '',
     multi: false,
     metode: ['cash'],
     rekeningPopup: false,
+    sjId: '{{ old('surat_jalan_id') }}',
+    manualTruckId: '{{ old('truck_id') }}',
+    manualDriverId: '{{ old('driver_id', Auth::user()->hasRole('supir_knek') ? Auth::user()->driver?->id : '') }}',
+    trucks: {{ $trucks->toJson() }},
     rekeningDetail: {
         bank: 'BCA',
         norek: '1234567890',
@@ -32,7 +38,21 @@
     handleSJChange(el) {
         if (!el) return;
         let selected = el.options[el.selectedIndex];
-        this.currentStok = (selected.value && selected.dataset.stok) ? selected.dataset.stok : 0;
+        if (selected.value && selected.dataset.stok) {
+            this.currentStok = selected.dataset.stok;
+        } else {
+            this.updateManualStock();
+        }
+    },
+    updateManualStock() {
+        if (!this.sjId && this.manualTruckId) {
+            let truck = this.trucks.find(t => t.id == this.manualTruckId);
+            this.currentStok = (truck && truck.vehicle_stock) ? truck.vehicle_stock.stok_saat_ini : 0;
+        } else if (this.sjId) {
+            // Already handled in handleSJChange by dataset
+        } else {
+            this.currentStok = 0;
+        }
     },
     toggleMetode(val) {
         if (!this.multi) {
@@ -46,6 +66,7 @@
                 this.metode.push(val);
             }
         }
+        this.syncFormatted();
         this.autoFillSinglePayment();
     },
     toggleMulti() {
@@ -71,18 +92,32 @@
                 this.nominalTransfer = 0;
             }
         }
+        this.syncFormatted();
+    },
+    syncFormatted() {
+        this.formattedCash = this.formatNumber(this.nominalCash);
+        this.formattedTransfer = this.formatNumber(this.nominalTransfer);
+    },
+    formatNumber(num) {
+        if (!num && num !== 0) return '';
+        return num.toString().replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     },
     formatRupiah(amount) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     }
 }" x-init="
     updateHarga();
+    syncFormatted();
     $nextTick(() => {
         let sjSelect = document.getElementById('surat_jalan_id');
         if (sjSelect && sjSelect.value) {
             handleSJChange(sjSelect);
+        } else {
+            updateManualStock();
         }
     });
+    $watch('sjId', value => { if(!value) updateManualStock(); });
+    $watch('manualTruckId', value => updateManualStock());
 ">
     
     <div class="mb-6">
@@ -108,17 +143,41 @@
                                 <input type="date" name="tanggal_penjualan" value="{{ old('tanggal_penjualan', date('Y-m-d')) }}" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Surat Jalan (SJ Aktif) <span class="text-red-500">*</span></label>
-                                <select name="surat_jalan_id" id="surat_jalan_id" required @change="handleSJChange($event.target)" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
-                                    <option value="">-- Pilih SJ --</option>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Surat Jalan (SJ Aktif)</label>
+                                <select name="surat_jalan_id" id="surat_jalan_id" x-model="sjId" @change="handleSJChange($event.target)" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                                    <option value="">-- Tanpa Surat Jalan --</option>
                                     @foreach($suratJalans as $sj)
                                         <option value="{{ $sj->id }}" 
                                                 data-stok="{{ $sj->truck->vehicleStock->stok_saat_ini ?? 0 }}"
-                                                {{ (old('surat_jalan_id') == $sj->id || count($suratJalans) === 1) ? 'selected' : '' }}>
+                                                {{ (old('surat_jalan_id') == $sj->id) ? 'selected' : '' }}>
                                             {{ $sj->nomor_surat_jalan }} ({{ $sj->truck->nomor_polisi }})
                                         </option>
                                     @endforeach
                                 </select>
+                            </div>
+                        </div>
+
+                        {{-- Driver and Truck selection - only shown if NO SJ is selected --}}
+                        <div x-show="!sjId" x-transition class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                            <div>
+                                <label class="block text-sm font-medium text-indigo-700 mb-1">Supir Utama <span class="text-red-500">*</span></label>
+                                <select name="driver_id" :required="!sjId" x-model="manualDriverId" class="w-full px-4 py-2 border border-indigo-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition">
+                                    <option value="">-- Pilih Supir --</option>
+                                    @foreach($drivers as $driver)
+                                        <option value="{{ $driver->id }}">{{ $driver->nama }}</option>
+                                    @endforeach
+                                </select>
+                                @error('driver_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-indigo-700 mb-1">Truck Armada <span class="text-red-500">*</span></label>
+                                <select name="truck_id" :required="!sjId" x-model="manualTruckId" class="w-full px-4 py-2 border border-indigo-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition">
+                                    <option value="">-- Pilih Truck --</option>
+                                    @foreach($trucks as $truck)
+                                        <option value="{{ $truck->id }}">{{ $truck->nomor_polisi }} ({{ $truck->nama_truk }})</option>
+                                    @endforeach
+                                </select>
+                                @error('truck_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>
 
@@ -150,7 +209,10 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Tabung (Pcs) <span class="text-red-500">*</span></label>
                                 <input type="number" name="jumlah_tabung" x-model="jumlah" required min="1" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-indigo-600 focus:ring-2 focus:ring-emerald-500 transition">
                                 <template x-if="currentStok > 0">
-                                    <p class="text-[10px] text-gray-400 mt-1">Sisa di Mobil: <span class="font-bold text-emerald-600" x-text="currentStok"></span> Pcs</p>
+                                    <p class="text-[10px] text-gray-400 mt-1">Stok Tersedia: <span class="font-bold text-emerald-600" x-text="currentStok"></span> Pcs</p>
+                                </template>
+                                <template x-if="currentStok <= 0">
+                                    <p class="text-[10px] text-red-400 mt-1 italic">Pilih SJ atau Truck untuk cek stok.</p>
                                 </template>
                             </div>
                         </div>
@@ -237,9 +299,15 @@
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">Rp</span>
-                                <input type="number" name="nominal_cash" x-model.number="nominalCash" 
-                                    @input="if (multi && metode.includes('transfer')) nominalTransfer = Math.max(0, total - nominalCash)"
-                                    min="0" step="any" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 transition" placeholder="0" value="{{ old('nominal_cash', 0) }}">
+                                <input type="hidden" name="nominal_cash" :value="nominalCash">
+                                <input type="text" x-model="formattedCash" 
+                                    @input="nominalCash = formattedCash.replace(/\D/g, ''); 
+                                            formattedCash = formatNumber(nominalCash);
+                                            if (multi && metode.includes('transfer')) {
+                                                nominalTransfer = Math.max(0, total - nominalCash);
+                                                syncFormatted();
+                                            }"
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 transition" placeholder="0">
                             </div>
                         </div>
 
@@ -255,7 +323,11 @@
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">Rp</span>
-                                <input type="number" name="nominal_transfer" x-model.number="nominalTransfer" min="0" step="any" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 transition" placeholder="0" value="{{ old('nominal_transfer', 0) }}">
+                                <input type="hidden" name="nominal_transfer" :value="nominalTransfer">
+                                <input type="text" x-model="formattedTransfer" 
+                                    @input="nominalTransfer = formattedTransfer.replace(/\D/g, ''); 
+                                            formattedTransfer = formatNumber(nominalTransfer);"
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 transition" placeholder="0">
                             </div>
                         </div>
 

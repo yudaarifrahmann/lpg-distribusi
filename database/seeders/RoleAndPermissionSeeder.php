@@ -72,18 +72,9 @@ class RoleAndPermissionSeeder extends Seeder
         // Assign permissions to admin_keuangan
         $adminKeuangan->syncPermissions([
             'view dashboard',
-            'view master data',
-            'create master data',
-            'edit master data',
-            'delete master data',
-            'view penebusan',
-            'create penebusan',
-            'edit penebusan',
-            'delete penebusan',
-            'view sa',
-            'create sa',
-            'edit sa',
-            'delete sa',
+            // REMOVED: 'view master data', 'create master data', 'edit master data', 'delete master data',
+            // REMOVED: 'view penebusan', 'create penebusan', 'edit penebusan', 'delete penebusan',
+            // REMOVED: 'view sa', 'create sa', 'edit sa', 'delete sa',
             'view stock',
             'view vehicle stock',
             'view surat jalan',
@@ -104,6 +95,8 @@ class RoleAndPermissionSeeder extends Seeder
 
         $driverPermissions = [
             'view dashboard',
+            'view penebusan',
+            'create penebusan',
             'view surat jalan',
             'view vehicle stock',
             'view penjualan',

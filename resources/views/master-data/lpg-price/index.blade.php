@@ -105,16 +105,21 @@
                     <h3 class="text-lg font-bold text-gray-800">Tambah Harga LPG</h3>
                     <button @click="showCreate = false" class="p-1 hover:bg-gray-100 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
                 </div>
-                <form action="{{ route('lpg-price.store') }}" method="POST" class="space-y-4">
+                <form action="{{ route('lpg-price.store') }}" method="POST" class="space-y-4" x-data="{ 
+                    formattedHarga: '',
+                    get rawHarga() { return this.formattedHarga.replace(/\D/g, '') }
+                }">
                     @csrf
+                    <input type="hidden" name="harga" :value="rawHarga">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nama Harga <span class="text-red-500">*</span></label>
-                        <input type="text" name="nama_harga" required placeholder="Contoh: Harga Rp15.000" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="text" name="nama_harga" value="{{ old('nama_harga') }}" required placeholder="Contoh: Harga Rp15.000" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         @error('nama_harga')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Harga (Rp) <span class="text-red-500">*</span></label>
-                        <input type="number" name="harga" required min="0" step="100" placeholder="Contoh: 15000" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="text" x-model="formattedHarga" @input="formattedHarga = formattedHarga.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" required placeholder="Contoh: 15.000" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-[10px] text-gray-400 mt-1" x-show="formattedHarga">Nilai: Rp <span x-text="formattedHarga"></span></p>
                         @error('harga')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -142,15 +147,25 @@
                     <h3 class="text-lg font-bold text-gray-800">Edit Harga LPG</h3>
                     <button @click="showEdit = false" class="p-1 hover:bg-gray-100 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
                 </div>
-                <form :action="'{{ url('master-data/lpg-price') }}/' + editData.id" method="POST" class="space-y-4">
+                <form :action="'{{ url('master-data/lpg-price') }}/' + editData.id" method="POST" class="space-y-4" x-data="{ 
+                    get formattedHarga() { 
+                        let val = editData.harga || '';
+                        return val.toString().replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    },
+                    set formattedHarga(val) {
+                        editData.harga = val.replace(/\D/g, '');
+                    }
+                }">
                     @csrf @method('PUT')
+                    <input type="hidden" name="harga" :value="editData.harga">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nama Harga <span class="text-red-500">*</span></label>
                         <input type="text" name="nama_harga" x-model="editData.nama_harga" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Harga (Rp) <span class="text-red-500">*</span></label>
-                        <input type="number" name="harga" x-model="editData.harga" required min="0" step="100" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="text" x-model="formattedHarga" @input="formattedHarga = $event.target.value" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-[10px] text-gray-400 mt-1">Nilai: Rp <span x-text="formattedHarga"></span></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>

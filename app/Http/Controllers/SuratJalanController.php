@@ -58,7 +58,7 @@ class SuratJalanController extends Controller
      */
     public function create()
     {
-        $penebusans = Penebusan::where('status_penebusan', 'berhasil')
+        $penebusans = Penebusan::with('truck')->where('status_penebusan', 'berhasil')
             ->whereDoesntHave('suratJalan')
             ->latest()
             ->get();

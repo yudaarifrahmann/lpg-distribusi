@@ -22,6 +22,17 @@ class PenebusanController extends Controller
     {
         $query = Penebusan::with(['scheduleAgreement', 'truck', 'driver']);
 
+        // Filter by driver if user is supir_knek
+        if (auth()->user()->hasRole('supir_knek')) {
+            $driver = auth()->user()->driver;
+            if ($driver) {
+                $query->where('driver_id', $driver->id);
+            } else {
+                // If user is supir but has no driver profile, they shouldn't see anything or handle it gracefully
+                $query->where('id', 0);
+            }
+        }
+
         if ($request->filled('search')) {
             $query->where('nomor_do', 'like', '%' . $request->search . '%');
         }
@@ -40,16 +51,34 @@ class PenebusanController extends Controller
      */
     public function create(Request $request)
     {
+        $user = auth()->user();
+        $isDriver = $user->hasRole('supir_knek');
+        $driverProfile = $user->driver;
+
+        $sasQuery = ScheduleAgreement::where('status_sa', 'pending');
+        
+        if ($isDriver) {
+            if ($driverProfile) {
+                $sasQuery->where('driver_id', $driverProfile->id);
+            } else {
+                return redirect()->route('penebusan.index')->with('error', 'Profil driver tidak ditemukan untuk akun Anda.');
+            }
+        }
+
+        $sas = $sasQuery->get();
         $drivers = Driver::where('status', 'aktif')->whereNotNull('truck_id')->get();
-        $sas = ScheduleAgreement::where('status_sa', 'pending')->get();
         
         $selectedSaId = $request->sa_id;
         $selectedSa = null;
         if ($selectedSaId) {
             $selectedSa = ScheduleAgreement::find($selectedSaId);
+            // Verify if this SA belongs to the driver if user is driver
+            if ($isDriver && $selectedSa && $selectedSa->driver_id != $driverProfile->id) {
+                $selectedSa = null;
+            }
         }
 
-        return view('penebusan.create', compact('drivers', 'sas', 'selectedSa'));
+        return view('penebusan.create', compact('drivers', 'sas', 'selectedSa', 'isDriver', 'driverProfile'));
     }
 
     /**
@@ -59,21 +88,36 @@ class PenebusanController extends Controller
     {
         $data = $request->validated();
         
-        // 1 DO = 560 tabung
-        // prompt says "harga default: Rp6.487.298 per DO"
-        // Here we assume 1 penebusan = 1 DO (standard flow) or we can allow multiple if UI supports it.
-        // The prompt says "multiple DO dalam satu SA", but usually 1 record = 1 nomor DO.
+        $sa = ScheduleAgreement::findOrFail($data['schedule_agreement_id']);
         
+        // If user is driver, ensure they own this SA
+        if (auth()->user()->hasRole('supir_knek')) {
+            $driverProfile = auth()->user()->driver;
+            if (!$driverProfile || $sa->driver_id != $driverProfile->id) {
+                return back()->with('error', 'Anda tidak memiliki otoritas untuk SA ini.');
+            }
+            $data['driver_id'] = $driverProfile->id;
+        } else {
+            // Admin flow, use driver_id from request or SA if not provided
+            $data['driver_id'] = $data['driver_id'] ?? $sa->driver_id;
+        }
+
+        // Use truck_id from SA if available, otherwise from driver profile
+        if ($sa->truck_id) {
+            $data['truck_id'] = $sa->truck_id;
+        } else {
+            $driver = Driver::findOrFail($data['driver_id']);
+            if (!$driver->truck_id) {
+                return back()->with('error', 'Driver/SA tidak memiliki Truk yang terasosiasi.')->withInput();
+            }
+            $data['truck_id'] = $driver->truck_id;
+        }
+
+        // 1 DO = 560 tabung
         $data['jumlah_tabung'] = 560; 
         $data['harga_per_do'] = 6487298;
         $data['total_penebusan'] = $data['harga_per_do'];
         $data['status_penebusan'] = 'berhasil';
-
-        $driver = Driver::findOrFail($data['driver_id']);
-        if (!$driver->truck_id) {
-            return back()->with('error', 'Supir yang dipilih tidak memiliki Truck Armada default. Silakan atur Truck Default di Master Supir/Knek terlebih dahulu.')->withInput();
-        }
-        $data['truck_id'] = $driver->truck_id;
 
         DB::beginTransaction();
 

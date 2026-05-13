@@ -3,7 +3,7 @@
 @section('page_title', 'Laporan Global (Pemasukan, Pengeluaran & Retur)')
 
 @section('content')
-<div class="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+<div class="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Pemasukan</p>
         <h3 class="text-2xl font-black text-emerald-600">Rp {{ number_format($summary['total_pemasukan']) }}</h3>
@@ -15,17 +15,22 @@
         <p class="text-[10px] text-gray-400 mt-2">{{ number_format($expenses->count()) }} Transaksi</p>
     </div>
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Piutang</p>
+        <h3 class="text-2xl font-black text-amber-500">Rp {{ number_format($summary['total_utang']) }}</h3>
+        <p class="text-[10px] text-gray-400 mt-2">Tagihan Belum Lunas</p>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Saldo</p>
         <h3 class="text-2xl font-black {{ $summary['saldo'] >= 0 ? 'text-blue-600' : 'text-red-600' }}">
             Rp {{ number_format($summary['saldo']) }}
         </h3>
     </div>
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Tabung (Penjualan)</p>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Tabung (Jual)</p>
         <h3 class="text-2xl font-black text-cyan-600">{{ number_format($summary['total_tabung_penjualan']) }} <span class="text-xs font-normal text-gray-400">Pcs</span></h3>
     </div>
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Retur Tabung</p>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Retur</p>
         <h3 class="text-2xl font-black text-orange-600">{{ number_format($summary['total_retur_tabung']) }} <span class="text-xs font-normal text-gray-400">Pcs</span></h3>
         <p class="text-[10px] text-gray-400 mt-2">{{ number_format($returs->count()) }} Transaksi</p>
     </div>

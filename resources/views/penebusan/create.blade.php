@@ -39,25 +39,46 @@
                     @foreach($sas as $sa)
                         <option value="{{ $sa->id }}" {{ (old('schedule_agreement_id') == $sa->id || ($selectedSa && $selectedSa->id == $sa->id)) ? 'selected' : '' }}>
                             SA {{ $sa->tanggal_sa->format('d/m/Y') }} - {{ $sa->jumlah_do }} DO ({{ number_format($sa->jumlah_tabung) }} tabung)
+                            @if(!$isDriver)
+                                | Supir: {{ $sa->driver->nama ?? '-' }}
+                            @endif
                         </option>
                     @endforeach
                 </select>
                 @error('schedule_agreement_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Supir / Knek <span class="text-red-500">*</span></label>
-                <select name="driver_id" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
-                    <option value="">-- Pilih Personil --</option>
-                    @foreach($drivers as $driver)
-                        <option value="{{ $driver->id }}" {{ old('driver_id') == $driver->id ? 'selected' : '' }}>
-                            {{ $driver->nama }} ({{ ucfirst($driver->role_pekerjaan) }} - Truck: {{ $driver->truck->nomor_polisi ?? '-' }})
-                        </option>
-                    @endforeach
-                </select>
-                <p class="text-xs text-gray-400 mt-1">Truck armada akan ditentukan secara otomatis berdasarkan Truck Default dari supir yang dipilih.</p>
-                @error('driver_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-            </div>
+            @if($isDriver)
+                <input type="hidden" name="driver_id" value="{{ $driverProfile->id }}">
+                <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                Penebusan akan dicatat atas nama <strong>{{ $driverProfile->nama }}</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supir / Knek <span class="text-red-500">*</span></label>
+                    <select name="driver_id" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
+                        <option value="">-- Pilih Personil --</option>
+                        @foreach($drivers as $driver)
+                            <option value="{{ $driver->id }}" {{ (old('driver_id') == $driver->id || ($selectedSa && $selectedSa->driver_id == $driver->id)) ? 'selected' : '' }}>
+                                {{ $driver->nama }} ({{ $driver->truck->nomor_polisi ?? '-' }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Truck armada akan ditentukan secara otomatis berdasarkan SA atau Truck Default dari supir.</p>
+                    @error('driver_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+            @endif
 
             <div x-data="{ photoName: null, photoPreview: null }">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foto Nota Penebusan (Opsional)</label>

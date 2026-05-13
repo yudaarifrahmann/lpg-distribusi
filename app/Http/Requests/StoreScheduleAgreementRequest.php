@@ -23,6 +23,8 @@ class StoreScheduleAgreementRequest extends FormRequest
     {
         return [
             'tanggal_sa' => 'required|date',
+            'driver_id' => 'required|exists:drivers,id',
+            'truck_id' => 'required|exists:trucks,id',
             'jumlah_do' => 'required|integer|min:1',
             'jumlah_tabung' => 'required|integer|min:1',
             'keterangan' => 'nullable|string',

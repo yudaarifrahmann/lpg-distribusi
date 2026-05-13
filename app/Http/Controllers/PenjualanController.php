@@ -11,6 +11,8 @@ use App\Models\Pangkalan;
 use App\Models\LpgPrice;
 use App\Models\VehicleStock;
 use App\Models\VehicleStockHistory;
+use App\Models\Driver;
+use App\Models\Truck;
 use App\Traits\LogActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,10 +81,10 @@ class PenjualanController extends Controller
         
         // Supir only sees their own active SJ
         if (Auth::user()->hasRole('supir_knek')) {
-            $driver = Auth::user()->driver;
-            if ($driver) {
-                $querySj->where(function($q) use ($driver) {
-                    $q->where('driver_id', $driver->id)->orWhere('knek_id', $driver->id);
+            $driverProfile = Auth::user()->driver;
+            if ($driverProfile) {
+                $querySj->where(function($q) use ($driverProfile) {
+                    $q->where('driver_id', $driverProfile->id)->orWhere('knek_id', $driverProfile->id);
                 });
             } else {
                 $querySj->where('id', 0);
@@ -90,10 +92,13 @@ class PenjualanController extends Controller
         }
 
         $suratJalans = $querySj->get();
-        $pangkalans = Pangkalan::where('status', 'aktif')->get();
+        $pangkalans = Pangkalan::where('status', 'aktif')->orderBy('nama_pangkalan')->get();
         $prices = LpgPrice::where('status', 'aktif')->get();
+        
+        $drivers = Driver::where('status', 'aktif')->orderBy('nama')->get();
+        $trucks = Truck::with('vehicleStock')->where('status_kendaraan', 'aktif')->get();
 
-        return view('penjualan.create', compact('suratJalans', 'pangkalans', 'prices'));
+        return view('penjualan.create', compact('suratJalans', 'pangkalans', 'prices', 'drivers', 'trucks'));
     }
 
     /**
@@ -105,12 +110,21 @@ class PenjualanController extends Controller
 
         DB::beginTransaction();
         try {
-            $sj       = SuratJalan::findOrFail($data['surat_jalan_id']);
+            $sj = null;
+            if (!empty($data['surat_jalan_id'])) {
+                $sj = SuratJalan::findOrFail($data['surat_jalan_id']);
+                $truckId = $sj->truck_id;
+                $driverId = $sj->driver_id;
+            } else {
+                $truckId = $data['truck_id'];
+                $driverId = $data['driver_id'];
+            }
+
             $price    = LpgPrice::findOrFail($data['lpg_price_id']);
             $pangkalan = $this->resolvePangkalan($data);
 
             // 1. Check Vehicle Stock
-            $vStock = VehicleStock::where('truck_id', $sj->truck_id)->first();
+            $vStock = VehicleStock::where('truck_id', $truckId)->first();
             if (!$vStock || $vStock->stok_saat_ini < $data['jumlah_tabung']) {
                 throw new \Exception('Stok di kendaraan tidak mencukupi. Stok saat ini: ' . ($vStock ? $vStock->stok_saat_ini : 0));
             }
@@ -138,9 +152,9 @@ class PenjualanController extends Controller
             $penjualan = Penjualan::create([
                 'nomor_invoice'    => $invoice,
                 'tanggal_penjualan'=> $data['tanggal_penjualan'],
-                'surat_jalan_id'   => $sj->id,
-                'truck_id'         => $sj->truck_id,
-                'driver_id'        => $sj->driver_id,
+                'surat_jalan_id'   => $sj?->id,
+                'truck_id'         => $truckId,
+                'driver_id'        => $driverId,
                 'pangkalan_id'     => $pangkalan->id,
                 'lpg_price_id'     => $price->id,
                 'jumlah_tabung'    => $data['jumlah_tabung'],
@@ -161,13 +175,13 @@ class PenjualanController extends Controller
             // 7. History kendaraan
             VehicleStockHistory::create([
                 'tanggal'     => $data['tanggal_penjualan'],
-                'truck_id'    => $sj->truck_id,
+                'truck_id'    => $truckId,
                 'jenis_mutasi'=> 'penjualan',
                 'referensi'   => $invoice,
                 'stok_masuk'  => 0,
                 'stok_keluar' => $data['jumlah_tabung'],
                 'stok_akhir'  => $newVStock,
-                'keterangan'  => 'Penjualan ke Pangkalan: ' . $pangkalan->nama_pangkalan,
+                'keterangan'  => 'Penjualan ke Pangkalan: ' . $pangkalan->nama_pangkalan . ($sj ? ' (SJ #' . $sj->nomor_surat_jalan . ')' : ' (Tanpa SJ)'),
             ]);
 
             // 8. Buat Piutang jika ada sisa tagihan
@@ -186,9 +200,9 @@ class PenjualanController extends Controller
             if ($request->filled('jumlah_retur') && $request->jumlah_retur > 0) {
                 $penjualan->returs()->create([
                     'tanggal_retur' => $penjualan->tanggal_penjualan,
-                    'surat_jalan_id' => $sj->id,
-                    'truck_id' => $sj->truck_id,
-                    'driver_id' => $sj->driver_id,
+                    'surat_jalan_id' => $sj?->id,
+                    'truck_id' => $truckId,
+                    'driver_id' => $driverId,
                     'jumlah_retur' => $request->jumlah_retur,
                     'kondisi_tabung' => $request->kondisi_tabung,
                     'keterangan' => 'Retur saat penjualan: ' . ($request->catatan ?? 'Bocor/Rusak'),

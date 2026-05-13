@@ -10,20 +10,39 @@
 
 {{-- Filters --}}
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-    <form method="GET" action="{{ route('piutang.index') }}" class="flex flex-col sm:flex-row gap-3">
-        <select name="pangkalan_id" class="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 transition">
-            <option value="">Semua Pangkalan</option>
-            @foreach($pangkalans as $p)
-                <option value="{{ $p->id }}" {{ request('pangkalan_id') == $p->id ? 'selected' : '' }}>{{ $p->nama_pangkalan }}</option>
-            @endforeach
-        </select>
-        <select name="status" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 transition">
-            <option value="">Semua Status</option>
-            <option value="belum_bayar" {{ request('status') == 'belum_bayar' ? 'selected' : '' }}>Belum Bayar</option>
-            <option value="mencicil" {{ request('status') == 'mencicil' ? 'selected' : '' }}>Mencicil</option>
-            <option value="lunas" {{ request('status') == 'lunas' ? 'selected' : '' }}>Lunas</option>
-        </select>
-        <button type="submit" class="px-6 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition">Filter</button>
+    <form method="GET" action="{{ route('piutang.index') }}" class="flex flex-col lg:flex-row gap-3 items-end lg:items-center">
+        <div class="flex-1 w-full lg:w-auto">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Pangkalan</label>
+            <select name="pangkalan_id" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 transition">
+                <option value="">Semua Pangkalan</option>
+                @foreach($pangkalans as $p)
+                    <option value="{{ $p->id }}" {{ request('pangkalan_id') == $p->id ? 'selected' : '' }}>{{ $p->nama_pangkalan }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="w-full lg:w-40">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Status</label>
+            <select name="status" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 transition">
+                <option value="">Semua Status</option>
+                <option value="belum_bayar" {{ request('status') == 'belum_bayar' ? 'selected' : '' }}>Belum Bayar</option>
+                <option value="mencicil" {{ request('status') == 'mencicil' ? 'selected' : '' }}>Mencicil</option>
+                <option value="lunas" {{ request('status') == 'lunas' ? 'selected' : '' }}>Lunas</option>
+            </select>
+        </div>
+        <div class="flex gap-2 w-full lg:w-auto">
+            <div class="flex-1">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Dari</label>
+                <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 transition">
+            </div>
+            <div class="flex-1">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Sampai</label>
+                <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 transition">
+            </div>
+        </div>
+        <div class="flex gap-2 w-full lg:w-auto">
+            <button type="submit" class="flex-1 lg:flex-none px-6 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition">Cari</button>
+            <a href="{{ route('piutang.index') }}" class="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition">Reset</a>
+        </div>
     </form>
 </div>
 

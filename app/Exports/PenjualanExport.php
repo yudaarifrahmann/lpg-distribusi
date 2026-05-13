@@ -18,7 +18,7 @@ class PenjualanExport implements FromCollection, WithHeadings, WithMapping
 
     public function collection()
     {
-        $query = Penjualan::with(['pangkalan', 'truck', 'supir']);
+        $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'piutang']);
 
         if ($this->request->filled('start_date') && $this->request->filled('end_date')) {
             $query->whereBetween('tanggal_penjualan', [$this->request->start_date, $this->request->end_date]);
@@ -31,13 +31,16 @@ class PenjualanExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             'Tanggal',
-            'Surat Jalan',
+            'No Invoice',
             'Truk',
             'Supir',
             'Pangkalan',
             'Harga',
             'Jumlah Tabung',
             'Total Penjualan',
+            'Cash',
+            'Transfer',
+            'Utang (Sisa)',
             'Metode Pembayaran',
             'Status',
         ];
@@ -47,13 +50,16 @@ class PenjualanExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             $penjualan->tanggal_penjualan->format('d/m/Y'),
-            $penjualan->surat_jalan,
-            $penjualan->truck->nomor_polisi,
-            $penjualan->supir->nama,
-            $penjualan->pangkalan->nama_pangkalan,
-            $penjualan->harga_lpg,
+            $penjualan->nomor_invoice,
+            $penjualan->truck->nomor_polisi ?? '-',
+            $penjualan->supir->nama ?? '-',
+            $penjualan->pangkalan->nama_pangkalan ?? '-',
+            $penjualan->harga_satuan,
             $penjualan->jumlah_tabung,
             $penjualan->total_penjualan,
+            $penjualan->nominal_cash,
+            $penjualan->nominal_transfer,
+            $penjualan->piutang ? $penjualan->piutang->sisa_tagihan : 0,
             $penjualan->metode_pembayaran,
             $penjualan->status_pembayaran,
         ];

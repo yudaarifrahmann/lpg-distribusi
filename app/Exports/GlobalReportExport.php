@@ -35,7 +35,7 @@ class GlobalReportExport implements FromCollection, WithHeadings, WithMapping, S
         $paymentMethod = request('payment_method');
 
         // Get Penjualan
-        $penjualanQuery = Penjualan::with(['truck', 'supir', 'branch'])
+        $penjualanQuery = Penjualan::with(['truck', 'supir', 'branch', 'piutang'])
             ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
             ->whereBetween('tanggal_penjualan', [$this->startDate, $this->endDate]);
 
@@ -63,7 +63,7 @@ class GlobalReportExport implements FromCollection, WithHeadings, WithMapping, S
                 'tabung' => $item->jumlah_tabung,
                 'cash' => $item->nominal_cash,
                 'transfer' => $item->nominal_transfer,
-                'utang' => $item->total_penjualan - $item->nominal_cash - $item->nominal_transfer,
+                'utang' => $item->piutang ? $item->piutang->sisa_tagihan : 0,
                 'total' => $item->total_penjualan,
                 'keterangan' => 'Penjualan - ' . $item->nomor_invoice,
             ];

@@ -85,8 +85,7 @@ class ExpenseController extends Controller
             'items.*.metode' => 'required|in:cash,transfer',
             'items.*.category_id' => 'nullable|exists:expense_categories,id',
             'items.*.keterangan' => 'nullable|string',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
+            'items.*.attachment' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
         
         $userId = Auth::id();
@@ -96,8 +95,8 @@ class ExpenseController extends Controller
 
         DB::beginTransaction();
         try {
-            $expenses = [];
-            foreach ($request->items as $item) {
+            $count = 0;
+            foreach ($request->items as $index => $item) {
                 $expense = Expense::create([
                     'tanggal_pengeluaran' => $request->tanggal_pengeluaran,
                     'user_id' => $userId,
@@ -110,25 +109,24 @@ class ExpenseController extends Controller
                     'verified_by' => Auth::id(),
                     'verified_at' => now(),
                 ]);
-                $expenses[] = $expense;
-            }
 
-            if ($request->hasFile('attachments')) {
-                foreach ($request->file('attachments') as $file) {
+                // Handle attachment for this specific item
+                if ($request->hasFile("items.$index.attachment")) {
+                    $file = $request->file("items.$index.attachment");
                     $path = $file->store('expenses', 'public');
-                    foreach ($expenses as $expense) {
-                        ExpenseAttachment::create([
-                            'expense_id' => $expense->id,
-                            'path_file' => $path,
-                            'nama_file' => $file->getClientOriginalName(),
-                            'mime_type' => $file->getMimeType(),
-                        ]);
-                    }
+                    
+                    ExpenseAttachment::create([
+                        'expense_id' => $expense->id,
+                        'path_file' => $path,
+                        'nama_file' => $file->getClientOriginalName(),
+                        'mime_type' => $file->getMimeType(),
+                    ]);
                 }
+                $count++;
             }
 
             DB::commit();
-            return redirect()->route('expense.index')->with('success', count($expenses) . ' Pengeluaran berhasil disimpan.');
+            return redirect()->route('expense.index')->with('success', $count . ' Pengeluaran berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal menyimpan pengeluaran: ' . $e->getMessage())->withInput();

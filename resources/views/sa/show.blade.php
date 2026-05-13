@@ -31,6 +31,11 @@
                         <p class="text-lg font-bold text-gray-800">{{ $scheduleAgreement->tanggal_sa->format('d F Y') }}</p>
                     </div>
                     <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-tighter">Supir & Truk</p>
+                        <p class="text-sm font-bold text-gray-800">{{ $scheduleAgreement->driver->nama ?? '-' }}</p>
+                        <p class="text-xs text-gray-500">{{ $scheduleAgreement->truck->nomor_polisi ?? '-' }} {{ $scheduleAgreement->truck->nama_truk ? '('.$scheduleAgreement->truck->nama_truk.')' : '' }}</p>
+                    </div>
+                    <div>
                         <p class="text-xs text-gray-400 uppercase tracking-tighter">Target Volume</p>
                         <p class="text-lg font-bold text-blue-600">{{ $scheduleAgreement->jumlah_do }} DO <span class="text-sm font-normal text-gray-400">({{ number_format($scheduleAgreement->jumlah_tabung) }} tabung)</span></p>
                     </div>

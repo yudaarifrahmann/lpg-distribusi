@@ -19,7 +19,7 @@
         <form action="{{ route('surat-jalan.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-6" x-ref="sjForm">
             @csrf
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="{ tanggalBerangkat: '{{ old('tanggal_berangkat', date('Y-m-d')) }}' }">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Surat Jalan <span class="text-red-500">*</span></label>
                     <input type="text" name="nomor_surat_jalan" value="{{ old('nomor_surat_jalan', 'SJ-'.date('YmdHis')) }}" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
@@ -27,7 +27,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Berangkat <span class="text-red-500">*</span></label>
-                    <input type="date" name="tanggal_berangkat" value="{{ old('tanggal_berangkat', date('Y-m-d')) }}" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
+                    <input type="date" name="tanggal_berangkat" x-model="tanggalBerangkat" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition">
                     @error('tanggal_berangkat')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -36,6 +36,24 @@
                 muatGudang: false, 
                 stokGudang: {{ $stokGudang }}, 
                 jumlahTabung: {{ old('jumlah_tabung', 560) }},
+                penebusans: {{ $penebusans->toJson() }},
+                selectedPenebusanId: '{{ old('penebusan_id') }}',
+                
+                get filteredPenebusans() {
+                    // Find the date input from the sibling div or use a shared state
+                    // To keep it simple, I'll use a global variable or just look at the input value
+                    let dateInput = document.querySelector('input[name=tanggal_berangkat]');
+                    let date = dateInput ? dateInput.value : '';
+                    
+                    if (!date) return this.penebusans;
+                    
+                    return this.penebusans.filter(p => {
+                        // Extract YYYY-MM-DD from ISO date
+                        let pDate = p.tanggal_penebusan.split('T')[0];
+                        return pDate === date;
+                    });
+                },
+                
                 handleMuatGudang() {
                     if (this.muatGudang) {
                         this.jumlahTabung = Math.min(this.stokGudang, 560);
@@ -43,23 +61,30 @@
                 },
                 handlePenebusanChange(el) {
                     let selected = el.options[el.selectedIndex];
-                    if (selected.value && selected.dataset.jumlah) {
+                    if (selected && selected.value && selected.dataset.jumlah) {
                         this.jumlahTabung = selected.dataset.jumlah;
                     }
+                },
+                formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    let date = new Date(dateStr);
+                    return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 }
             }" x-init="$watch('muatGudang', value => handleMuatGudang())">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Nomor DO (Penebusan)</label>
-                        <select name="penebusan_id" :required="!muatGudang" :disabled="muatGudang" @change="handlePenebusanChange($event.target)" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition disabled:bg-gray-100 disabled:text-gray-400">
+                        <select name="penebusan_id" x-model="selectedPenebusanId" :required="!muatGudang" :disabled="muatGudang" @change="handlePenebusanChange($event.target)" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition disabled:bg-gray-100 disabled:text-gray-400">
                             <option value="">-- Pilih DO --</option>
-                            @foreach($penebusans as $p)
-                                <option value="{{ $p->id }}" data-jumlah="{{ $p->jumlah_tabung }}" {{ old('penebusan_id') == $p->id ? 'selected' : '' }}>
-                                    DO #{{ $p->nomor_do }} ({{ $p->tanggal_penebusan->format('d/m/Y') }}) - {{ $p->truck->nomor_polisi }}
-                                </option>
-                            @endforeach
+                            <template x-for="p in filteredPenebusans" :key="p.id">
+                                <option :value="p.id" :data-jumlah="p.jumlah_tabung" :selected="selectedPenebusanId == p.id"
+                                    x-text="'DO #' + p.nomor_do + ' (' + formatDate(p.tanggal_penebusan) + ') - ' + (p.truck ? p.truck.nomor_polisi : '-')"></option>
+                            </template>
                         </select>
-                        <p class="text-[10px] text-gray-400 mt-1" x-show="!muatGudang">Stok DO sudah otomatis ada di kendaraan saat pembayaran berhasil.</p>
+                        <p class="text-[10px] text-gray-400 mt-1" x-show="!muatGudang">Stok DO sudah otomatis ada di kendaraan saat pembayaran berhasil. Muncul sesuai tanggal berangkat.</p>
+                        <template x-if="filteredPenebusans.length === 0 && !muatGudang">
+                            <p class="text-[10px] text-amber-600 mt-1 font-bold italic">! Tidak ada DO untuk tanggal ini.</p>
+                        </template>
                     </div>
                     <div class="flex items-end pb-2">
                         <label class="relative inline-flex items-center cursor-pointer">

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreScheduleAgreementRequest;
 use App\Http\Requests\UpdateScheduleAgreementRequest;
 use App\Models\ScheduleAgreement;
+use App\Models\Driver;
+use App\Models\Truck;
 use Illuminate\Http\Request;
 
 class ScheduleAgreementController extends Controller
@@ -14,7 +16,17 @@ class ScheduleAgreementController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ScheduleAgreement::query();
+        $query = ScheduleAgreement::with(['driver', 'truck']);
+
+        // Filter by driver if user is supir_knek
+        if (auth()->user()->hasRole('supir_knek')) {
+            $driver = auth()->user()->driver;
+            if ($driver) {
+                $query->where('driver_id', $driver->id);
+            } else {
+                $query->where('id', 0);
+            }
+        }
 
         if ($request->filled('search')) {
             $query->where('keterangan', 'like', '%' . $request->search . '%');
@@ -38,7 +50,9 @@ class ScheduleAgreementController extends Controller
      */
     public function create()
     {
-        return view('sa.create');
+        $drivers = Driver::orderBy('nama')->get();
+        $trucks = Truck::orderBy('nomor_polisi')->get();
+        return view('sa.create', compact('drivers', 'trucks'));
     }
 
     /**
@@ -60,7 +74,7 @@ class ScheduleAgreementController extends Controller
      */
     public function show(ScheduleAgreement $scheduleAgreement)
     {
-        $scheduleAgreement->load('penebusans.truck', 'penebusans.driver');
+        $scheduleAgreement->load('penebusans.truck', 'penebusans.driver', 'driver', 'truck');
         return view('sa.show', compact('scheduleAgreement'));
     }
 
@@ -69,7 +83,9 @@ class ScheduleAgreementController extends Controller
      */
     public function edit(ScheduleAgreement $scheduleAgreement)
     {
-        return view('sa.edit', compact('scheduleAgreement'));
+        $drivers = Driver::orderBy('nama')->get();
+        $trucks = Truck::orderBy('nomor_polisi')->get();
+        return view('sa.edit', compact('scheduleAgreement', 'drivers', 'trucks'));
     }
 
     /**

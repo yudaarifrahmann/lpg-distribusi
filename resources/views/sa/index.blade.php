@@ -42,6 +42,7 @@
                 <tr>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal SA</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Supir & Truk</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Jumlah DO</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Jumlah Tabung</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
@@ -57,6 +58,10 @@
                         @if($sa->keterangan)
                             <p class="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{{ $sa->keterangan }}</p>
                         @endif
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm font-semibold text-gray-800">{{ $sa->driver->nama ?? '-' }}</p>
+                        <p class="text-xs text-gray-500">{{ $sa->truck->nomor_polisi ?? '-' }}</p>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-700">{{ $sa->jumlah_do }} DO</td>
                     <td class="px-6 py-4 text-sm text-gray-700">{{ number_format($sa->jumlah_tabung) }} Tabung</td>
@@ -76,6 +81,11 @@
                             <a href="{{ route('schedule-agreement.show', $sa) }}" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition" title="Detail">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
                             </a>
+                            @can('edit sa')
+                            <a href="{{ route('schedule-agreement.edit', $sa) }}" class="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition" title="Edit">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                            </a>
+                            @endcan
                             @if($sa->status_sa == 'pending')
                                 <a href="{{ route('penebusan.create', ['sa_id' => $sa->id]) }}" class="inline-flex items-center px-2.5 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition">
                                     Tebus DO

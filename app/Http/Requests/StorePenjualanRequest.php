@@ -31,7 +31,9 @@ class StorePenjualanRequest extends FormRequest
     {
         return [
             'tanggal_penjualan'   => 'required|date',
-            'surat_jalan_id'      => 'required|exists:surat_jalans,id',
+            'surat_jalan_id'      => 'nullable|exists:surat_jalans,id',
+            'driver_id'           => 'required_without:surat_jalan_id|nullable|exists:drivers,id',
+            'truck_id'            => 'required_without:surat_jalan_id|nullable|exists:trucks,id',
             'pangkalan_id'        => 'nullable|required_without:pangkalan_nama|exists:pangkalans,id',
             'pangkalan_nama'      => 'nullable|required_without:pangkalan_id|string|max:255',
             'lpg_price_id'        => 'required|exists:lpg_prices,id',

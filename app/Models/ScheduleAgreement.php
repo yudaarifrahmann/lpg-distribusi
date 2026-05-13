@@ -15,15 +15,28 @@ class ScheduleAgreement extends Model
 
     protected $fillable = [
         'tanggal_sa',
+        'driver_id',
+        'truck_id',
         'jumlah_do',
         'jumlah_tabung',
         'keterangan',
         'status_sa',
+        'branch_id',
     ];
 
     protected $casts = [
         'tanggal_sa' => 'date',
     ];
+
+    public function driver()
+    {
+        return $this->belongsTo(Driver::class);
+    }
+
+    public function truck()
+    {
+        return $this->belongsTo(Truck::class);
+    }
 
     public function penebusans(): HasMany
     {

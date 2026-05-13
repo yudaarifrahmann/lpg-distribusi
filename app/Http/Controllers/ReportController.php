@@ -26,7 +26,7 @@ class ReportController extends Controller
      */
     public function penjualan(Request $request)
     {
-        $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'lpgPrice']);
+        $query = Penjualan::with(['pangkalan', 'truck', 'supir', 'lpgPrice', 'piutang']);
 
         $this->applyFilters($query, $request);
 
@@ -39,7 +39,8 @@ class ReportController extends Controller
             'cash' => $penjualans->sum('nominal_cash'),
             'transfer' => $penjualans->sum('nominal_transfer'),
             'utang' => $penjualans->sum(function($p) {
-                return $p->total_penjualan - $p->nominal_cash - $p->nominal_transfer;
+                // Gunakan sisa tagihan dari piutang jika ada, agar sinkron
+                return $p->piutang ? $p->piutang->sisa_tagihan : 0;
             }),
         ];
 
@@ -74,7 +75,7 @@ class ReportController extends Controller
 
         $categoryBreakdown = $expenses->groupBy('expense_category_id')->map(function($group) {
             return [
-                'nama' => $group->first()->category->nama_kategori,
+                'nama' => $group->first()->category->nama_kategori ?? 'Tanpa Kategori',
                 'total' => $group->sum('nominal'),
                 'count' => $group->count(),
             ];
@@ -109,7 +110,7 @@ class ReportController extends Controller
             
         $expenseBreakdown = $expenses->groupBy('expense_category_id')->map(function($group) {
             return [
-                'nama' => $group->first()->category->nama_kategori,
+                'nama' => $group->first()->category->nama_kategori ?? 'Lain-lain',
                 'total' => $group->sum('nominal'),
             ];
         });
@@ -206,7 +207,7 @@ class ReportController extends Controller
         $paymentMethod = $request->payment_method;
 
         // Get Penjualan (Income)
-        $penjualanQuery = Penjualan::with(['truck', 'supir', 'branch'])
+        $penjualanQuery = Penjualan::with(['truck', 'supir', 'branch', 'piutang'])
             ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
             ->whereBetween('tanggal_penjualan', [$startDate, $endDate]);
 
@@ -234,7 +235,7 @@ class ReportController extends Controller
                 'nominal' => $item->total_penjualan,
                 'cash' => $item->nominal_cash,
                 'transfer' => $item->nominal_transfer,
-                'utang' => $item->total_penjualan - $item->nominal_cash - $item->nominal_transfer,
+                'utang' => $item->piutang ? $item->piutang->sisa_tagihan : 0, // Sinkron dengan sisa tagihan
                 'jumlah_tabung' => $item->jumlah_tabung,
                 'keterangan' => 'Penjualan - ' . $item->nomor_invoice,
                 'status' => 'Pemasukan',

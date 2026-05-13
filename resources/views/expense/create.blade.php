@@ -5,16 +5,16 @@
 @section('content')
 <div class="max-w-5xl" x-data="{ 
     expenses: [
-        { nama: '', category_id: '', nominal: 0, metode: 'cash', keterangan: '' }
+        { nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '' }
     ],
     addExpense() {
-        this.expenses.push({ nama: '', category_id: '', nominal: 0, metode: 'cash', keterangan: '' });
+        this.expenses.push({ nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '' });
     },
     removeExpense(index) {
         if (this.expenses.length > 1) {
             this.expenses.splice(index, 1);
         } else {
-            this.expenses[0] = { nama: '', category_id: '', nominal: 0, metode: 'cash', keterangan: '' };
+            this.expenses[0] = { nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '' };
         }
     },
     get total() {
@@ -93,7 +93,11 @@
 
                                     <div>
                                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nominal (Rp) <span class="text-red-500">*</span></label>
-                                        <input type="number" :name="`items[${index}][nominal]`" x-model.number="expense.nominal" required class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-black text-emerald-600 focus:ring-2 focus:ring-emerald-500 transition">
+                                        <input type="hidden" :name="`items[${index}][nominal]`" :value="expense.nominal">
+                                        <input type="text" x-model="expense.formattedNominal" 
+                                               @input="expense.nominal = expense.formattedNominal.replace(/\D/g, ''); 
+                                                       expense.formattedNominal = expense.nominal.replace(/\B(?=(\d{3})+(?!\d))/g, '.')" 
+                                               required placeholder="0" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-black text-emerald-600 focus:ring-2 focus:ring-emerald-500 transition">
                                     </div>
 
                                     <div>
@@ -104,9 +108,35 @@
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Keterangan</label>
-                                        <input type="text" :name="`items[${index}][keterangan]`" x-model="expense.keterangan" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                                    <div class="md:col-span-2">
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Bukti Nota / Resi</label>
+                                        <div class="flex items-center space-x-4">
+                                            <label class="cursor-pointer group relative">
+                                                <div class="w-16 h-16 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center group-hover:border-emerald-500 group-hover:bg-emerald-50 transition overflow-hidden">
+                                                    <template x-if="!expense.preview">
+                                                        <svg class="w-6 h-6 text-gray-300 group-hover:text-emerald-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                                    </template>
+                                                    <template x-if="expense.preview">
+                                                        <img :src="expense.preview" class="w-full h-full object-cover">
+                                                    </template>
+                                                </div>
+                                                <input type="file" :name="`items[${index}][attachment]`" class="hidden" accept="image/*"
+                                                       @change="
+                                                            const file = $event.target.files[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onload = (e) => expense.preview = e.target.result;
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                       ">
+                                            </label>
+                                            <div class="flex-1">
+                                                <p class="text-[10px] text-gray-400 leading-tight">Klik ikon untuk upload nota khusus untuk pengeluaran ini. Format JPG/PNG, Max 2MB.</p>
+                                                <template x-if="expense.preview">
+                                                    <button type="button" @click="expense.preview = null" class="mt-1 text-[9px] font-bold text-red-500 uppercase">Hapus Foto</button>
+                                                </template>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -129,27 +159,6 @@
                         <span class="text-sm font-bold uppercase tracking-widest text-gray-300">Total Nominal</span>
                         <span class="text-xl font-black text-emerald-400" x-text="formatRupiah(total)"></span>
                     </div>
-                </div>
-
-                <div x-data="{ images: [] }" class="space-y-4 mb-8">
-                    <label class="block w-full cursor-pointer">
-                        <div class="border-2 border-dashed border-gray-700 rounded-2xl p-6 flex flex-col items-center justify-center hover:bg-gray-800 transition group">
-                            <svg class="w-8 h-8 text-gray-600 group-hover:text-emerald-500 transition mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <p class="text-[9px] font-bold text-gray-500 uppercase">Upload Bukti Nota</p>
-                        </div>
-                        <input type="file" name="attachments[]" multiple accept="image/*" class="hidden" 
-                               @change="images = Array.from($event.target.files).map(file => URL.createObjectURL(file))">
-                    </label>
-
-                    <template x-if="images.length > 0">
-                        <div class="grid grid-cols-4 gap-2">
-                            <template x-for="(img, index) in images" :key="index">
-                                <div class="relative aspect-square rounded-lg overflow-hidden">
-                                    <img :src="img" class="w-full h-full object-cover">
-                                </div>
-                            </template>
-                        </div>
-                    </template>
                 </div>
 
                 <button type="submit" class="w-full py-4 bg-emerald-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition transform active:scale-95">

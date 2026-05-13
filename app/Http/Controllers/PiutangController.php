@@ -31,6 +31,12 @@ class PiutangController extends Controller
             $query->where('status_piutang', $request->status);
         }
 
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereHas('penjualan', function($q) use ($request) {
+                $q->whereBetween('tanggal_penjualan', [$request->start_date, $request->end_date]);
+            });
+        }
+
         $piutangs = $query->latest()->paginate(15);
         $pangkalans = Pangkalan::where('status', 'aktif')->get();
 
