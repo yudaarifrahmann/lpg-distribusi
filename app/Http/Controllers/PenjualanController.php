@@ -292,20 +292,61 @@ class PenjualanController extends Controller
      */
     public function update(UpdatePenjualanRequest $request, Penjualan $penjualan)
     {
-        $oldData = $penjualan->toArray();
-        $penjualan->update($request->validated());
-        
-        // If status becomes lunas, we should also update piutang if it exists
-        if ($penjualan->status_pembayaran == 'lunas' && $penjualan->piutang) {
-            $penjualan->piutang->update([
-                'sisa_tagihan' => 0,
-                'status_piutang' => 'lunas'
-            ]);
+        DB::beginTransaction();
+        try {
+            $oldData = $penjualan->toArray();
+            $validated = $request->validated();
+
+            // Calculate new total
+            $validated['total_penjualan'] = $validated['jumlah_tabung'] * $validated['harga_satuan'];
+
+            // Handle jumlah_tabung changes (adjust vehicle stock)
+            if ($validated['jumlah_tabung'] != $penjualan->jumlah_tabung) {
+                $difference = $validated['jumlah_tabung'] - $penjualan->jumlah_tabung;
+                
+                $vStock = VehicleStock::where('truck_id', $penjualan->truck_id)->first();
+                if (!$vStock) {
+                    throw new \Exception('Vehicle stock tidak ditemukan untuk truck ini.');
+                }
+
+                $newVStock = $vStock->stok_saat_ini - $difference;
+                if ($newVStock < 0) {
+                    throw new \Exception('Stok kendaraan tidak cukup untuk perubahan ini.');
+                }
+
+                $vStock->update(['stok_saat_ini' => $newVStock]);
+
+                VehicleStockHistory::create([
+                    'tanggal' => $validated['tanggal_penjualan'],
+                    'truck_id' => $penjualan->truck_id,
+                    'jenis_mutasi' => 'penjualan',
+                    'referensi' => 'EDIT-' . $penjualan->nomor_invoice,
+                    'stok_masuk' => $difference < 0 ? abs($difference) : 0,
+                    'stok_keluar' => $difference > 0 ? $difference : 0,
+                    'stok_akhir' => $newVStock,
+                    'keterangan' => 'Penyesuaian stok dari edit penjualan (dari ' . $penjualan->jumlah_tabung . ' menjadi ' . $validated['jumlah_tabung'] . ')',
+                ]);
+            }
+
+            // Update penjualan
+            $penjualan->update($validated);
+            
+            // If status becomes lunas, we should also update piutang if it exists
+            if ($penjualan->status_pembayaran == 'lunas' && $penjualan->piutang) {
+                $penjualan->piutang->update([
+                    'sisa_tagihan' => 0,
+                    'status_piutang' => 'lunas'
+                ]);
+            }
+
+            self::log('Update Penjualan: ' . $penjualan->nomor_invoice, 'penjualan', $oldData, $penjualan->toArray());
+
+            DB::commit();
+            return redirect()->route('penjualan.index')->with('success', 'Transaksi berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal memperbarui transaksi: ' . $e->getMessage())->withInput();
         }
-
-        self::log('Update Penjualan: ' . $penjualan->nomor_invoice, 'penjualan', $oldData, $penjualan->toArray());
-
-        return redirect()->route('penjualan.index')->with('success', 'Transaksi berhasil diperbarui.');
     }
 
     /**

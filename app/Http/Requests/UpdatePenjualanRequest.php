@@ -22,6 +22,10 @@ class UpdatePenjualanRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'tanggal_penjualan' => 'required|date',
+            'pangkalan_id' => 'required|exists:pangkalans,id',
+            'jumlah_tabung' => 'required|integer|min:1',
+            'harga_satuan' => 'required|numeric|min:0',
             'status_pembayaran' => 'required|in:lunas,belum_lunas,cicilan',
             'catatan' => 'nullable|string',
         ];
