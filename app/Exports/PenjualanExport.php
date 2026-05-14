@@ -24,6 +24,10 @@ class PenjualanExport implements FromCollection, WithHeadings, WithMapping
             $query->whereBetween('tanggal_penjualan', [$this->request->start_date, $this->request->end_date]);
         }
 
+        if ($this->request->filled('branch_id')) {
+            $query->where('branch_id', $this->request->branch_id);
+        }
+
         return $query->get();
     }
 

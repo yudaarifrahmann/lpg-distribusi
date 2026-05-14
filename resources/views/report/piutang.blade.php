@@ -20,7 +20,18 @@
 
 {{-- Filters --}}
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-    <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        @if($isSuperAdmin)
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Cabang</label>
+            <select name="branch_id" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs">
+                <option value="">Semua Cabang</option>
+                @foreach($branches as $branch)
+                    <option value="{{ $branch->id }}" {{ $selectedBranchId == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Pangkalan</label>
             <select name="pangkalan_id" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs">

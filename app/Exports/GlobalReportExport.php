@@ -38,21 +38,28 @@ class GlobalReportExport implements WithMultipleSheets
         $user = Auth::user();
         $isSuperAdmin = $user ? $user->hasRole('superadmin') : true;
         $branchId = $user ? $user->branch_id : null;
+        
+        // Use branch_id from request if superadmin, otherwise use user's branch
+        $selectedBranchId = $this->request->branch_id;
+        if (!$isSuperAdmin) {
+            $selectedBranchId = $branchId;
+        }
+
         $period = Carbon::parse($startDate)->translatedFormat('F Y');
 
         $penjualans = Penjualan::with(['pangkalan', 'branch'])
-            ->when(!$isSuperAdmin && $branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->whereBetween('tanggal_penjualan', [$startDate, $endDate])
             ->get();
 
         $expenses = Expense::with(['category', 'branch'])
-            ->when(!$isSuperAdmin && $branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->where('status_verifikasi', 'disetujui')
             ->whereBetween('tanggal_pengeluaran', [$startDate, $endDate])
             ->get();
 
         $penebusans = Penebusan::with(['branch'])
-            ->when(!$isSuperAdmin && $branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->whereBetween('tanggal_penebusan', [$startDate, $endDate])
             ->get();
 

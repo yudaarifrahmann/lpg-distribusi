@@ -53,6 +53,8 @@
                         <p class="text-xs mt-0.5">
                             @if(Auth::user()->hasRole('superadmin'))
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">SuperAdmin</span>
+                            @elseif(Auth::user()->hasRole('admin'))
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">Admin</span>
                             @elseif(Auth::user()->hasRole('admin_keuangan'))
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Admin Keuangan</span>
                             @elseif(Auth::user()->hasRole('supir_knek'))

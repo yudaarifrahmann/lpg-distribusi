@@ -12,6 +12,7 @@ use App\Models\Pangkalan;
 use App\Models\Truck;
 use App\Models\Driver;
 use App\Models\ExpenseCategory;
+use App\Models\Branch;
 use App\Exports\PenjualanExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
@@ -56,8 +57,10 @@ class ReportController extends Controller
         $pangalans = Pangkalan::all();
         $trucks = Truck::all();
         $drivers = Driver::all();
+        $isSuperAdmin = Auth::user()->hasRole('superadmin');
+        $branches = $isSuperAdmin ? Branch::all() : collect();
 
-        return view('report.penjualan', compact('penjualans', 'summary', 'priceBreakdown', 'pangalans', 'trucks', 'drivers'));
+        return view('report.penjualan', compact('penjualans', 'summary', 'priceBreakdown', 'pangalans', 'trucks', 'drivers', 'isSuperAdmin', 'branches'));
     }
 
     /**
@@ -65,7 +68,17 @@ class ReportController extends Controller
      */
     public function pengeluaran(Request $request)
     {
-        $query = Expense::with(['category', 'user'])->where('status_verifikasi', 'disetujui');
+        $isSuperAdmin = Auth::user()->hasRole('superadmin');
+        $branchId = Auth::user()->branch_id;
+        $selectedBranchId = $request->branch_id;
+
+        if (!$isSuperAdmin) {
+            $selectedBranchId = $branchId;
+        }
+
+        $query = Expense::with(['category', 'user'])
+            ->where('status_verifikasi', 'disetujui')
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId));
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal_pengeluaran', [$request->start_date, $request->end_date]);
@@ -82,8 +95,9 @@ class ReportController extends Controller
         });
 
         $totalPengeluaran = $expenses->sum('nominal');
+        $branches = $isSuperAdmin ? Branch::all() : collect();
 
-        return view('report.pengeluaran', compact('expenses', 'categoryBreakdown', 'totalPengeluaran'));
+        return view('report.pengeluaran', compact('expenses', 'categoryBreakdown', 'totalPengeluaran', 'isSuperAdmin', 'branches', 'selectedBranchId'));
     }
 
     /**
@@ -93,19 +107,30 @@ class ReportController extends Controller
     {
         $startDate = $request->start_date ?? Carbon::now()->startOfMonth()->toDateString();
         $endDate = $request->end_date ?? Carbon::now()->endOfMonth()->toDateString();
+        $selectedBranchId = $request->branch_id;
+        $isSuperAdmin = Auth::user()->hasRole('superadmin');
+        $userBranchId = Auth::user()->branch_id;
+
+        if (!$isSuperAdmin) {
+            $selectedBranchId = $userBranchId;
+        }
 
         // 1. Revenue (Penjualan) - hanya yang sudah dibayar (lunas/cicilan)
         $totalPenjualan = Penjualan::whereBetween('tanggal_penjualan', [$startDate, $endDate])
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->whereIn('status_pembayaran', ['lunas', 'cicilan'])
             ->sum('total_penjualan');
         
         // 2. Cost of Goods Sold (Penebusan DO)
-        $totalPenebusan = Penebusan::whereBetween('tanggal_penebusan', [$startDate, $endDate])->sum('total_penebusan');
+        $totalPenebusan = Penebusan::whereBetween('tanggal_penebusan', [$startDate, $endDate])
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+            ->sum('total_penebusan');
         
         // 3. Operating Expenses
         $expenses = Expense::with('category')
             ->where('status_verifikasi', 'disetujui')
             ->whereBetween('tanggal_pengeluaran', [$startDate, $endDate])
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->get();
             
         $expenseBreakdown = $expenses->groupBy('expense_category_id')->map(function($group) {
@@ -119,6 +144,8 @@ class ReportController extends Controller
         $labaKotor = $totalPenjualan - $totalPenebusan;
         $labaBersih = $labaKotor - $totalExpense;
 
+        $branches = $isSuperAdmin ? Branch::all() : collect();
+
         return view('report.laba-rugi', compact(
             'totalPenjualan', 
             'totalPenebusan', 
@@ -127,7 +154,10 @@ class ReportController extends Controller
             'labaKotor', 
             'labaBersih',
             'startDate',
-            'endDate'
+            'endDate',
+            'branches',
+            'isSuperAdmin',
+            'selectedBranchId'
         ));
     }
 
@@ -136,7 +166,16 @@ class ReportController extends Controller
      */
     public function piutang(Request $request)
     {
-        $query = Piutang::with(['pangkalan', 'penjualan']);
+        $isSuperAdmin = Auth::user()->hasRole('superadmin');
+        $branchId = Auth::user()->branch_id;
+        $selectedBranchId = $request->branch_id;
+
+        if (!$isSuperAdmin) {
+            $selectedBranchId = $branchId;
+        }
+
+        $query = Piutang::with(['pangkalan', 'penjualan'])
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId));
 
         if ($request->filled('status')) {
             $query->where('status_piutang', $request->status);
@@ -155,8 +194,9 @@ class ReportController extends Controller
         ];
 
         $pangalans = Pangkalan::all();
+        $branches = $isSuperAdmin ? Branch::all() : collect();
 
-        return view('report.piutang', compact('piutangs', 'summary', 'pangalans'));
+        return view('report.piutang', compact('piutangs', 'summary', 'pangalans', 'isSuperAdmin', 'branches', 'selectedBranchId'));
     }
 
     /**
@@ -164,16 +204,30 @@ class ReportController extends Controller
      */
     public function stok(Request $request)
     {
-        $query = StockMutation::with('user');
+        $isSuperAdmin = Auth::user()->hasRole('superadmin');
+        $branchId = Auth::user()->branch_id;
+        $selectedBranchId = $request->branch_id;
+
+        if (!$isSuperAdmin) {
+            $selectedBranchId = $branchId;
+        }
+
+        $query = StockMutation::with('user')
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId));
 
         if ($request->filled('jenis_mutasi')) {
             $query->where('jenis_mutasi', $request->jenis_mutasi);
         }
 
         $mutations = $query->latest('tanggal')->get();
-        $returs = ReturTabung::with(['truck', 'supir'])->where('status_retur', 'diterima')->get();
+        $returs = ReturTabung::with(['truck', 'supir'])
+            ->where('status_retur', 'diterima')
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+            ->get();
 
-        return view('report.stok', compact('mutations', 'returs'));
+        $branches = $isSuperAdmin ? Branch::all() : collect();
+
+        return view('report.stok', compact('mutations', 'returs', 'isSuperAdmin', 'branches', 'selectedBranchId'));
     }
 
     /**
@@ -205,10 +259,16 @@ class ReportController extends Controller
         $endDate = $request->filled('end_date') ? $request->end_date : Carbon::now()->endOfMonth()->toDateString();
         $search = $request->search;
         $paymentMethod = $request->payment_method;
+        $selectedBranchId = $request->branch_id;
+
+        // Force branch if not superadmin
+        if (!$isSuperAdmin) {
+            $selectedBranchId = $branchId;
+        }
 
         // Get Penjualan (Income)
         $penjualanQuery = Penjualan::with(['truck', 'supir', 'branch', 'piutang'])
-            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->whereBetween('tanggal_penjualan', [$startDate, $endDate]);
 
         if ($search) {
@@ -244,7 +304,7 @@ class ReportController extends Controller
 
         // Get Expenses (Pengeluaran)
         $expenseQuery = Expense::with(['category', 'user', 'branch'])
-            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->where('status_verifikasi', 'disetujui')
             ->whereBetween('tanggal_pengeluaran', [$startDate, $endDate]);
 
@@ -279,7 +339,7 @@ class ReportController extends Controller
 
         // Get Penebusan DO (Cost of Goods Sold / Purchasing)
         $penebusanQuery = Penebusan::with(['truck', 'driver', 'branch', 'scheduleAgreement'])
-            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->whereBetween('tanggal_penebusan', [$startDate, $endDate]);
 
         if ($search) {
@@ -309,7 +369,7 @@ class ReportController extends Controller
 
         // Get Retur Tabung (Warehouse Returns)
         $returQuery = ReturTabung::with(['truck', 'supir', 'branch'])
-            ->when(!$isSuperAdmin, fn($q) => $q->where('branch_id', $branchId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->whereBetween('tanggal_retur', [$startDate, $endDate])
             ->whereIn('status_retur', ['pending', 'diterima']);
 
@@ -363,6 +423,8 @@ class ReportController extends Controller
             'total_penebusan' => $penebusans->sum('nominal'),
         ];
 
+        $branches = $isSuperAdmin ? Branch::all() : collect();
+
         return view('report.global', compact(
             'allData',
             'penjualans',
@@ -370,7 +432,10 @@ class ReportController extends Controller
             'returs',
             'summary',
             'startDate',
-            'endDate'
+            'endDate',
+            'branches',
+            'isSuperAdmin',
+            'selectedBranchId'
         ));
     }
 
@@ -381,6 +446,10 @@ class ReportController extends Controller
     {
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal_penjualan', [$request->start_date, $request->end_date]);
+        }
+
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
         }
 
         if ($request->filled('pangkalan_id')) {

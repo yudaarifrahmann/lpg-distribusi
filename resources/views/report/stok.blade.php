@@ -3,6 +3,34 @@
 @section('page_title', 'Laporan Rekap Inventaris')
 
 @section('content')
+{{-- Filters --}}
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8 print:hidden">
+    <form method="GET" class="flex flex-wrap items-end gap-4">
+        @if($isSuperAdmin)
+        <div class="w-full md:w-auto md:min-w-[200px]">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Cabang</label>
+            <select name="branch_id" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs">
+                <option value="">Semua Cabang</option>
+                @foreach($branches as $branch)
+                    <option value="{{ $branch->id }}" {{ $selectedBranchId == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+        <div class="w-full md:w-auto md:min-w-[200px]">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Jenis Mutasi</label>
+            <select name="jenis_mutasi" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs">
+                <option value="">Semua Mutasi</option>
+                <option value="penjualan" {{ request('jenis_mutasi') == 'penjualan' ? 'selected' : '' }}>Penjualan</option>
+                <option value="penebusan_do" {{ request('jenis_mutasi') == 'penebusan_do' ? 'selected' : '' }}>Penebusan DO</option>
+                <option value="retur_gudang" {{ request('jenis_mutasi') == 'retur_gudang' ? 'selected' : '' }}>Retur Gudang</option>
+                <option value="penyesuaian_stok" {{ request('jenis_mutasi') == 'penyesuaian_stok' ? 'selected' : '' }}>Penyesuaian Stok</option>
+            </select>
+        </div>
+        <button type="submit" class="bg-gray-900 text-white font-bold px-8 py-2 rounded-lg text-xs hover:bg-black transition">Filter</button>
+    </form>
+</div>
+
 <div class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
     {{-- Retur Summary --}}
     <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">

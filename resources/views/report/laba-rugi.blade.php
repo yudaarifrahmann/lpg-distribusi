@@ -6,8 +6,8 @@
 <div class="max-w-4xl mx-auto">
     {{-- Filter --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8 print:hidden">
-        <form method="GET" class="flex flex-col md:flex-row md:items-end gap-4">
-            <div class="flex-1">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 items-end gap-4">
+            <div class="md:col-span-2">
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Pilih Periode</label>
                 <div class="flex items-center space-x-2">
                     <input type="date" name="start_date" value="{{ $startDate }}" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm">
@@ -15,10 +15,23 @@
                     <input type="date" name="end_date" value="{{ $endDate }}" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm">
                 </div>
             </div>
-            <button type="submit" class="bg-gray-900 text-white font-bold px-8 py-2.5 rounded-xl text-sm hover:bg-black transition">Tampilkan Laporan</button>
-            <button type="button" onclick="window.print()" class="p-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h2"></path></svg>
-            </button>
+            @if($isSuperAdmin)
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Cabang</label>
+                <select name="branch_id" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm">
+                    <option value="">Semua Cabang</option>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" {{ $selectedBranchId == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-gray-900 text-white font-bold py-2.5 rounded-xl text-sm hover:bg-black transition">Filter</button>
+                <button type="button" onclick="window.print()" class="p-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
         </form>
     </div>
 

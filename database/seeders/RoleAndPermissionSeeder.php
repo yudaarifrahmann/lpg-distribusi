@@ -18,6 +18,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         // Create roles
         $superadmin = Role::firstOrCreate(['name' => 'superadmin']);
+        $admin = Role::firstOrCreate(['name' => 'admin']);
         $adminKeuangan = Role::firstOrCreate(['name' => 'admin_keuangan']);
         $supirKnek = Role::firstOrCreate(['name' => 'supir_knek']);
 
@@ -68,6 +69,15 @@ class RoleAndPermissionSeeder extends Seeder
 
         // Assign all permissions to superadmin
         $superadmin->syncPermissions(Permission::all());
+
+        // Assign permissions to admin (Can access everything except master data and user management)
+        $adminPermissions = Permission::all()->filter(function($p) {
+            return !str_contains($p->name, 'master data') && 
+                   !str_contains($p->name, 'user management') &&
+                   !str_contains($p->name, 'user') &&
+                   !str_contains($p->name, 'assign roles');
+        });
+        $admin->syncPermissions($adminPermissions);
 
         // Assign permissions to admin_keuangan
         $adminKeuangan->syncPermissions([
