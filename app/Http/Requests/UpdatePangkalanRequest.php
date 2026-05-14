@@ -23,7 +23,14 @@ class UpdatePangkalanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_pangkalan' => 'required|string|max:255|unique:pangkalans,nama_pangkalan,' . $this->pangkalan->id,
+            'nama_pangkalan' => [
+                'required', 
+                'string', 
+                'max:255', 
+                \Illuminate\Validation\Rule::unique('pangkalans', 'nama_pangkalan')
+                    ->where('branch_id', auth()->user()->branch_id)
+                    ->ignore($this->pangkalan->id)
+            ],
             'nama_pemilik' => 'required|string|max:255',
             'alamat' => 'required|string',
             'no_hp' => 'required|string|max:20',

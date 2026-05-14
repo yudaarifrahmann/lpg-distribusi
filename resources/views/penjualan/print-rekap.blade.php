@@ -23,6 +23,7 @@
         .summary-table { width: 250px; }
         .summary-table td { border: none; padding: 4px 0; }
         .summary-table tr.total-row td { border-top: 1px solid #000; font-weight: bold; padding-top: 8px; font-size: 12px; }
+        .text-red-600 { color: #dc2626; }
         
         @media print {
             .no-print { display: none; }
@@ -37,7 +38,7 @@
 
     <div class="header">
         <h1>Laporan Rekap Penjualan LPG</h1>
-        <p>PT. LPG DISTRIBUSI SEJAHTERA</p>
+        <p>PT. FARHAN ENERGI GASINDO</p>
         <p>Periode: {{ request('start_date') ? Carbon\Carbon::parse(request('start_date'))->format('d/m/Y') : '-' }} s/d {{ request('end_date') ? Carbon\Carbon::parse(request('end_date'))->format('d/m/Y') : '-' }}</p>
     </div>
 
@@ -45,6 +46,8 @@
         Dicetak pada: {{ now()->format('d/m/Y H:i') }} | 
         Filter: {{ request('pangkalan_id') ? 'Pangkalan Tertentu' : 'Semua Pangkalan' }}
     </div>
+
+<h3 style="margin-bottom: 10px; border-bottom: 1px solid #000; display: inline-block; font-size: 11px;">Detail Penjualan</h3>
 
     <table>
         <thead>
@@ -95,6 +98,42 @@
             </tr>
         </tfoot>
     </table>
+    
+    @if($expenses->isNotEmpty())
+    <div style="margin-top: 30px; page-break-before: auto;">
+        <h3 style="margin-bottom: 10px; border-bottom: 1px solid #000; display: inline-block; font-size: 11px;">Detail Pengeluaran Operasional</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 30px;">No</th>
+                    <th style="width: 80px;">Tanggal</th>
+                    <th>Kategori</th>
+                    <th>Nama Pengeluaran</th>
+                    <th>User / Driver</th>
+                    <th class="text-right">Nominal (Rp)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($expenses as $index => $e)
+                <tr>
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td class="text-center">{{ $e->tanggal_pengeluaran->format('d/m/Y') }}</td>
+                    <td>{{ $e->category->nama_kategori ?? '-' }}</td>
+                    <td>{{ $e->nama_pengeluaran }}</td>
+                    <td>{{ $e->user->name }}</td>
+                    <td class="text-right">{{ number_format($e->nominal, 0, ',', '.') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="font-bold" style="background: #f9fafb;">
+                    <td colspan="5" class="text-right">TOTAL PENGELUARAN</td>
+                    <td class="text-right">{{ number_format($summary['total_pengeluaran'], 0, ',', '.') }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    @endif
 
     <div class="summary-box">
         <table class="summary-table">

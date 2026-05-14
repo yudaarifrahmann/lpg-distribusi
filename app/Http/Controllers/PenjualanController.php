@@ -398,7 +398,7 @@ class PenjualanController extends Controller
         }
 
         // Fetch operational expenses for the period and filters
-        $expenseQuery = \App\Models\Expense::where('status_verifikasi', 'disetujui');
+        $expenseQuery = \App\Models\Expense::with(['category', 'user'])->where('status_verifikasi', 'disetujui');
         if ($startDate && $endDate) {
             $expenseQuery->whereBetween('tanggal_pengeluaran', [$startDate, $endDate]);
         }
@@ -407,7 +407,8 @@ class PenjualanController extends Controller
         } elseif (Auth::user()->hasRole('supir_knek')) {
             $expenseQuery->where('user_id', Auth::id());
         }
-        $totalPengeluaran = $expenseQuery->sum('nominal');
+        $expenses = $expenseQuery->get();
+        $totalPengeluaran = $expenses->sum('nominal');
 
         $summary = [
             'total_tabung' => $penjualans->sum('jumlah_tabung'),
@@ -421,7 +422,7 @@ class PenjualanController extends Controller
             'total_pengeluaran' => $totalPengeluaran,
         ];
 
-        return view('penjualan.print-rekap', compact('penjualans', 'summary'));
+        return view('penjualan.print-rekap', compact('penjualans', 'summary', 'expenses'));
     }
 
     public function print(Penjualan $penjualan)

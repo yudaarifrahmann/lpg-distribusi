@@ -107,7 +107,7 @@
                     </div>
                     <div class="text-right">
                         Invoice ID:<br>
-                        <span class="text-gray-800">REF-{{ $penjualan->suratJalan->nomor_surat_jalan }}</span>
+                        <span class="text-gray-800">REF-{{ $penjualan->suratJalan->nomor_surat_jalan ?? 'MANUAL' }}</span>
                     </div>
                 </div>
             </div>
