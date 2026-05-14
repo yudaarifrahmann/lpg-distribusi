@@ -23,27 +23,5 @@ class UserSeeder extends Seeder
             ]
         );
         $superadmin->assignRole('superadmin');
-
-        // Create Admin Keuangan
-        $adminKeuangan = User::updateOrCreate(
-            ['email' => 'admin_keuangan@lpg.local'],
-            [
-                'name' => 'Admin Keuangan',
-                'password' => Hash::make('keuangan123'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $adminKeuangan->assignRole('admin_keuangan');
-
-        // Create Supir/Knek
-        $supirKnek = User::updateOrCreate(
-            ['email' => 'supir_knek@lpg.local'],
-            [
-                'name' => 'Supir Knek',
-                'password' => Hash::make('supirknek123'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $supirKnek->assignRole('supir_knek');
     }
 }

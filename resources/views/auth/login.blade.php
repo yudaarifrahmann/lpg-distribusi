@@ -108,38 +108,6 @@
             </form>
         </div>
 
-        {{-- Demo Credentials --}}
-        <div class="mt-12">
-            <div class="flex items-center space-x-4 mb-6">
-                <div class="h-px flex-1 bg-slate-100"></div>
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Demo Access</span>
-                <div class="h-px flex-1 bg-slate-100"></div>
-            </div>
-            
-            <div class="grid grid-cols-1 gap-3">
-                <div class="p-4 rounded-2xl bg-slate-50/50 border border-slate-100 group hover:bg-white hover:shadow-md hover:border-blue-100 transition-all cursor-pointer" onclick="document.getElementById('email').value='superadmin@lpg.local'; document.getElementById('password').value='superadmin123'">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-[10px] font-black text-blue-600 uppercase mb-1">SuperAdmin</p>
-                            <p class="text-xs font-semibold text-slate-900">superadmin@lpg.local</p>
-                        </div>
-                        <svg class="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="p-4 rounded-2xl bg-slate-50/50 border border-slate-100 group hover:bg-white hover:shadow-md hover:border-blue-100 transition-all cursor-pointer" onclick="document.getElementById('email').value='admin_keuangan@lpg.local'; document.getElementById('password').value='keuangan123'">
-                        <p class="text-[10px] font-black text-slate-400 uppercase mb-1 group-hover:text-blue-600 transition-colors">Keuangan</p>
-                        <p class="text-[11px] font-semibold text-slate-900">admin_keuangan@lpg.local</p>
-                    </div>
-                    <div class="p-4 rounded-2xl bg-slate-50/50 border border-slate-100 group hover:bg-white hover:shadow-md hover:border-blue-100 transition-all cursor-pointer" onclick="document.getElementById('email').value='supir_knek@lpg.local'; document.getElementById('password').value='supirknek123'">
-                        <p class="text-[10px] font-black text-slate-400 uppercase mb-1 group-hover:text-blue-600 transition-colors">Driver</p>
-                        <p class="text-[11px] font-semibold text-slate-900">supir_knek@lpg.local</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         {{-- Back to Home --}}
         <div class="mt-10 text-center">
             <a href="{{ url('/') }}" class="text-xs font-bold text-slate-400 hover:text-blue-600 transition uppercase tracking-widest flex items-center justify-center">

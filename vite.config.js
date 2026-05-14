@@ -8,8 +8,11 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
+            buildDirectory: 'build',
         }),
+
         tailwindcss(),
+
         VitePWA({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico'],
@@ -31,6 +34,7 @@ export default defineConfig({
             }
         })
     ],
+
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],
