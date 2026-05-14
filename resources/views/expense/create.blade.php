@@ -5,16 +5,16 @@
 @section('content')
 <div class="max-w-5xl" x-data="{ 
     expenses: [
-        { nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '' }
+        { id: Date.now(), nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '', preview: null }
     ],
     addExpense() {
-        this.expenses.push({ nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '' });
+        this.expenses.unshift({ id: Date.now() + Math.random(), nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '', preview: null });
     },
     removeExpense(index) {
         if (this.expenses.length > 1) {
             this.expenses.splice(index, 1);
         } else {
-            this.expenses[0] = { nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '' };
+            this.expenses[0] = { id: Date.now(), nama: '', category_id: '', nominal: 0, formattedNominal: '', metode: 'cash', keterangan: '', preview: null };
         }
     },
     get total() {
@@ -69,7 +69,7 @@
                     </div>
 
                     <div class="space-y-4">
-                        <template x-for="(expense, index) in expenses" :key="index">
+                        <template x-for="(expense, index) in expenses" :key="expense.id">
                             <div class="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 relative group">
                                 <button type="button" @click="removeExpense(index)" class="absolute -top-2 -right-2 p-1.5 bg-white text-gray-300 hover:text-red-500 rounded-full border border-gray-100 shadow-sm transition opacity-0 group-hover:opacity-100">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>

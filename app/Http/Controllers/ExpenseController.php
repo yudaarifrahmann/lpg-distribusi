@@ -38,12 +38,21 @@ class ExpenseController extends Controller
             $query->where('status_verifikasi', $request->status);
         }
 
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal_pengeluaran', [$request->start_date, $request->end_date]);
         }
 
+        $totalFiltered = (clone $query)->sum('nominal');
         $expenses = $query->latest('tanggal_pengeluaran')->paginate(15);
         $categories = ExpenseCategory::all();
+        $users = collect();
+        if (Auth::user()->hasAnyRole(['superadmin', 'admin_keuangan'])) {
+            $users = \App\Models\User::all();
+        }
 
         // Dashboard Stats for Index
         $today = Carbon::today();
@@ -52,7 +61,7 @@ class ExpenseController extends Controller
         $totalHariIni = Expense::whereDate('tanggal_pengeluaran', $today)->where('status_verifikasi', '!=', 'ditolak')->sum('nominal');
         $totalBulanIni = Expense::whereBetween('tanggal_pengeluaran', $thisMonth)->where('status_verifikasi', '!=', 'ditolak')->sum('nominal');
 
-        return view('expense.index', compact('expenses', 'categories', 'totalHariIni', 'totalBulanIni'));
+        return view('expense.index', compact('expenses', 'categories', 'users', 'totalHariIni', 'totalBulanIni', 'totalFiltered'));
     }
 
     /**

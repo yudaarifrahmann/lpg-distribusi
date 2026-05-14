@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 @section('title', 'Pengeluaran - LPG Distribution')
-@section('page_title', 'Manajemen Pengeluaran Operasional')
+@section('page_title', 'History Pengeluaran')
 
 @section('content')
 <div class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -9,8 +9,8 @@
         <h3 class="text-2xl font-black text-gray-800">Rp {{ number_format($totalHariIni) }}</h3>
     </div>
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pengeluaran Bulan Ini</p>
-        <h3 class="text-2xl font-black text-emerald-600">Rp {{ number_format($totalBulanIni) }}</h3>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Filtered</p>
+        <h3 class="text-2xl font-black text-blue-600">Rp {{ number_format($totalFiltered) }}</h3>
     </div>
     <div class="bg-gray-900 p-6 rounded-2xl shadow-lg flex items-center justify-between">
         <div>
@@ -24,18 +24,58 @@
 </div>
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-    <form method="GET" action="{{ route('expense.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div class="sm:col-span-1">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari deskripsi..." class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+    <form method="GET" action="{{ route('expense.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div class="lg:col-span-1">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cari</label>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Deskripsi..." class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
         </div>
 
-        <select name="status" class="px-4 py-2 border border-gray-200 rounded-xl text-sm">
-            <option value="">Semua Status</option>
-            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-            <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
-            <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
-        </select>
-        <button type="submit" class="bg-gray-800 text-white font-bold rounded-xl text-sm hover:bg-gray-700 transition">Filter</button>
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Status</label>
+            <select name="status" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                <option value="">Semua Status</option>
+                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kategori</label>
+            <select name="category_id" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                <option value="">Semua Kategori</option>
+                @foreach($categories as $cat)
+                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->nama_kategori }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        @if($users->count() > 0)
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">User</label>
+            <select name="user_id" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+                <option value="">Semua User</option>
+                @foreach($users as $u)
+                    <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Mulai</label>
+            <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Akhir</label>
+            <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition">
+        </div>
+
+        <div class="lg:col-span-6 flex gap-2">
+            <button type="submit" class="flex-1 bg-gray-800 text-white font-bold py-2 rounded-xl text-sm hover:bg-gray-700 transition">Filter Data</button>
+            <a href="{{ route('expense.index') }}" class="px-6 bg-gray-100 text-gray-600 font-bold py-2 rounded-xl text-sm hover:bg-gray-200 transition">Reset</a>
+        </div>
     </form>
 </div>
 
