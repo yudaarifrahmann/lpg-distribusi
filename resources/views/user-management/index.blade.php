@@ -90,12 +90,14 @@
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center space-x-1">
                                 @can('edit user')
+                                @if(auth()->user()->hasRole('superadmin') || !$user->hasRole('superadmin'))
                                 <a href="{{ route('user-management.edit', $user) }}" class="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition" title="Edit">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
                                 </a>
+                                @endif
                                 @endcan
                                 @can('delete user')
-                                @if($user->id !== Auth::id())
+                                @if($user->id !== Auth::id() && (auth()->user()->hasRole('superadmin') || !$user->hasRole('superadmin')))
                                 <form action="{{ route('user-management.destroy', $user) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus user ini?')">
                                     @csrf
                                     @method('DELETE')

@@ -30,6 +30,9 @@ use Illuminate\Support\Facades\Route;
 
 // Landing Page
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
     return view('landing', [
         'settings' => \App\Models\AppSetting::landingValues(),
     ]);

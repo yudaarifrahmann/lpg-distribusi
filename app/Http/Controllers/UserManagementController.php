@@ -13,7 +13,11 @@ class UserManagementController extends Controller
 {
     public function index(Request $request)
     {
-        $roles = Role::orderBy('name')->get();
+        $rolesQuery = Role::orderBy('name');
+        if (!auth()->user()->hasRole('superadmin')) {
+            $rolesQuery->where('name', '!=', 'superadmin');
+        }
+        $roles = $rolesQuery->get();
 
         $query = User::query()
             ->with(['roles', 'branch'])
@@ -46,7 +50,11 @@ class UserManagementController extends Controller
     {
         abort_unless(auth()->user()->can('create user'), 403);
 
-        $roles = Role::orderBy('name')->get();
+        $rolesQuery = Role::orderBy('name');
+        if (!auth()->user()->hasRole('superadmin')) {
+            $rolesQuery->where('name', '!=', 'superadmin');
+        }
+        $roles = $rolesQuery->get();
         $branches = \App\Models\Branch::orderBy('name')->get();
 
         return view('user-management.create', compact('roles', 'branches'));
@@ -73,6 +81,11 @@ class UserManagementController extends Controller
         ]);
 
         foreach ($validated['users'] as $data) {
+            // Security check: non-superadmin cannot assign superadmin role
+            if (!auth()->user()->hasRole('superadmin') && $data['role'] === 'superadmin') {
+                return back()->with('error', 'Anda tidak memiliki akses untuk memberikan role SuperAdmin.')->withInput();
+            }
+
             if (!auth()->user()->hasRole('superadmin') && auth()->user()->branch_id) {
                 $data['branch_id'] = auth()->user()->branch_id;
             }
@@ -95,7 +108,11 @@ class UserManagementController extends Controller
     {
         abort_unless(auth()->user()->can('edit user'), 403);
 
-        $roles = Role::orderBy('name')->get();
+        $rolesQuery = Role::orderBy('name');
+        if (!auth()->user()->hasRole('superadmin')) {
+            $rolesQuery->where('name', '!=', 'superadmin');
+        }
+        $roles = $rolesQuery->get();
         $branches = \App\Models\Branch::orderBy('name')->get();
         $user->load('roles');
 
@@ -119,6 +136,16 @@ class UserManagementController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
         ]);
 
+        // Security check: non-superadmin cannot assign superadmin role
+        if (!auth()->user()->hasRole('superadmin') && $data['role'] === 'superadmin') {
+            return back()->with('error', 'Anda tidak memiliki akses untuk memberikan role SuperAdmin.')->withInput();
+        }
+
+        // Security check: non-superadmin cannot edit a superadmin user
+        if (!auth()->user()->hasRole('superadmin') && $user->hasRole('superadmin')) {
+            return back()->with('error', 'Anda tidak memiliki akses untuk mengubah data SuperAdmin.');
+        }
+
         if (!auth()->user()->hasRole('superadmin') && auth()->user()->branch_id) {
             $data['branch_id'] = auth()->user()->branch_id;
         }
@@ -139,10 +166,14 @@ class UserManagementController extends Controller
         return redirect()->route('user-management.index')
             ->with('success', 'User berhasil diperbarui.');
     }
-
     public function destroy(User $user)
     {
         abort_unless(auth()->user()->can('delete user'), 403);
+        
+        // Security check: non-superadmin cannot delete a superadmin user
+        if (!auth()->user()->hasRole('superadmin') && $user->hasRole('superadmin')) {
+            return back()->with('error', 'Anda tidak memiliki akses untuk menghapus data SuperAdmin.');
+        }
 
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Akun yang sedang digunakan tidak dapat dihapus.');

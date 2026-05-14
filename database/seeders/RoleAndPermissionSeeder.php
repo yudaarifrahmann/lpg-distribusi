@@ -70,11 +70,9 @@ class RoleAndPermissionSeeder extends Seeder
         // Assign all permissions to superadmin
         $superadmin->syncPermissions(Permission::all());
 
-        // Assign permissions to admin (Can access everything except master data and user management)
+        // Assign permissions to admin (Can access everything except master data)
         $adminPermissions = Permission::all()->filter(function($p) {
             return !str_contains($p->name, 'master data') && 
-                   !str_contains($p->name, 'user management') &&
-                   !str_contains($p->name, 'user') &&
                    !str_contains($p->name, 'assign roles');
         });
         $admin->syncPermissions($adminPermissions);
