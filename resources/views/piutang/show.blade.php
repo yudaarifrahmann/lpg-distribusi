@@ -86,7 +86,10 @@
                     </div>
                     <div class="pt-4 border-t border-gray-50">
                         <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Referensi Pengiriman</p>
-                        <p class="text-xs font-medium text-gray-700">{{ $piutang->penjualan->suratJalan->truck->nomor_polisi }} | {{ $piutang->penjualan->supir->nama }}</p>
+                        <p class="text-xs font-medium text-gray-700">
+                            {{ optional(optional($piutang->penjualan->suratJalan)->truck)->nomor_polisi ?? 'N/A' }}
+                            | {{ optional($piutang->penjualan->supir)->nama ?? 'N/A' }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -110,7 +113,8 @@
                                     {{ $piutang->penjualan->tanggal_penjualan->format('d/m/Y') }} • {{ $piutang->penjualan->jumlah_tabung }} tabung • {{ strtoupper($piutang->penjualan->metode_pembayaran) }}
                                 </p>
                                 <p class="text-xs text-gray-500 mt-1">
-                                    {{ $piutang->penjualan->suratJalan->nomor_surat_jalan }} • {{ $piutang->penjualan->suratJalan->truck->nomor_polisi }}
+                                    {{ optional($piutang->penjualan->suratJalan)->nomor_surat_jalan ?? 'No. SJ tidak tersedia' }}
+                                    • {{ optional(optional($piutang->penjualan->suratJalan)->truck)->nomor_polisi ?? 'No. Polisi tidak tersedia' }}
                                 </p>
                             </div>
                             <div class="text-left md:text-right">

@@ -11,7 +11,16 @@ class UpdatePenjualanRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('edit penjualan');
+        if ($this->user()->can('edit penjualan')) {
+            return true;
+        }
+
+        $penjualan = $this->route('penjualan');
+        if ($this->user()->hasRole('supir_knek') && $penjualan) {
+            return $penjualan->driver_id === optional($this->user()->driver)->id;
+        }
+
+        return false;
     }
 
     /**
